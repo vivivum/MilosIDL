@@ -1,0 +1,82 @@
+*** IDL CODE FOR DIFFERENT SPECTRAL LINES ***
+
+### Fe 6173. ###
+
+WL=6173.3356
+
+slo=2 & llo=1 & jlo=1
+sup=2 & lup=2 & jup=0
+DATA=[1.,slo,llo,jlo,sup,lup,jup]
+CREATE_NC,DATA
+
+### Fe 6301.5 ###
+
+WL1=6301.515
+slo1=2 & llo1=1 & jlo1=2
+sup1=2 & lup1=2 & jup1=2
+DATA1=[1.,slo1,llo1,jlo1,sup1,lup1,jup1]
+CREATE_NC,DATA1
+
+### Fe 6302.5 ###
+
+WL2=6302.494
+slo2=2 & llo2=1 & jlo2=1
+sup2=2 & lup2=2 & jup2=0
+DATA2=[1.,slo2,llo2,jlo2,sup2,lup2,jup2]
+CREATE_NC,DATA2
+
+### Fe 5250.208 ###
+
+WL3=5250.208
+slo3=2 & llo3=2 & jlo3=0
+sup3=3 & lup3=2 & jup3=1
+DATA3=[1.,slo3,llo3,jlo3,sup3,lup3,jup3]
+CREATE_NC,DATA3
+
+### Fe 5250.6 ###
+
+WL4=5250.645
+slo4=2 & llo4=1 & jlo4=2
+sup4=2 & lup4=1 & jup4=3
+DATA4=[1.,slo4,llo4,jlo4,sup4,lup4,jup4]
+CREATE_NC,DATA4
+
+### Fe 6767.79 ###
+
+WL5=6767.79 
+slo5=0 & llo5=0 & jlo5=0
+sup5=1 & lup5=1 & jup5=1
+CREATE_NC,DATA5
+
+### Fe 6301.5 + Fe 6302.5 ###
+
+wl1=double(6301.5012)
+wl2=double(6302.4936)
+slo1=2 & llo1=1 & jlo1=2 
+sup1=2 & lup1=2 & jup1=2 
+slo2=2 & llo2=1 & jlo2=1 
+sup2=2 & lup2=2 & jup2=0 
+
+DATA=[2.,slo1,llo1,jlo1,sup1,lup1,jup1,1.,$
+       slo2,llo2,jlo2,sup2,lup2,jup2,0.342466]
+wl=[2,wl1,wl2]
+create_nc,data
+
+### HELIUM LINE TRIPLET (SL COUPLING) ###
+
+LANDA0=double(10830.2501)
+LANDA1=double(10830.3397)
+LANDA2=double(10829.0911)
+
+slo0=1 & llo0=0 & jlo0=1 
+sup0=1 & lup0=1 & jup0=1 
+slo1=1 & llo1=0 & jlo1=1 
+sup1=1 & lup1=1 & jup1=2 
+slo2=1 & llo2=0 & jlo2=1 
+sup2=1 & lup2=1 & jup2=0 
+
+WLA=[3.,LANDA0,LANDA1,LANDA2]
+DATA=[3.,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333,$
+     slo1,llo1,jlo1,sup1,lup1,jup1,0.556,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111]
+
+CREATE_NC,DATA

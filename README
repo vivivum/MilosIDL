@@ -1,0 +1,68 @@
+----------------------------
+# AUTHORS ----------------------------
+   D. Orozco Suarez  	      National Astronomical Observatory of Japan,      2-21-1 Osawa, Mitaka, 181-8588, JAPAN      d.orozco@nao.ac.jp   J.C. del Toro Iniesta        Instituto de Astrofisica de Andalucia (CSIC)      Apdo de Correos 3004, 18080 Granada, SPAIN       jti@iaa.es----------------------------
+# DOWNLOADING
+----------------------------
+
+Download new versions from:
+
+Program modification dates will appear on the web page.
+Please check the modification history of milos.pro.
+
+----------------------------
+# COMPATIBILITY
+----------------------------
+
+IDL 6.0 and superior (not tested in earlier versions)
+
+----------------------------
+# INSTALLATION
+----------------------------
+
+tar -zxvf <archive>.tar.gz
+
+Program files should be placed in your IDL PATH.
+
+Example (in IDL> or .idl_startup): 
+
+!path=!path+':'+expand_path("+/Users/orozco/IDL/Synthesis/Milos_idl_beta1.2/")
+
+Use any method you like.
+
+Run the test program -> test.pro
+
+----------------------------
+# MANUAL
+----------------------------
+
+Under construction...
+For the moment go to the milos.pro procedure header.
+
+----------------------------
+# FILES IN THE DIRECTORY
+----------------------------
+VERSION
+README               
+Lines
+abtocd.pro     
+check_param.pro      
+covarm.pro           
+create_nc.pro
+quanten.pro
+fgauss.pro
+filtro.pro
+fvoigt.pro
+init_milos.pro
+lm_mils.pro
+me_der.pro
+mil_sinrf.pro
+mil_svd.pro          
+milos.pro
+readp.pro
+readrfs.pro
+sign.pro
+type.pro
+weights.pro
+weights_init.pro
+writep.pro
+----------------------------
