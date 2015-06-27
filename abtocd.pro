@@ -11,4 +11,5 @@ pro abtocd,a,rescale=rescale
     a[*]=(a-amin)/(amax-amin)
   endelse
 
+;this file is quite strange
 end
