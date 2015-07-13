@@ -68,9 +68,9 @@ loadct,0
 colors
 
 ;************************PHYSICS CONSTANTS (INITIAL)******************
-B1=0.2 & B2=0.8		
-eta0=12.5d0	        
-Magnet=1200.            
+B1=0.2 & B2=0.8
+eta0=12.5d0
+Magnet=1200.
 GAMMA=20.
 AZI=20.
 vlos=0.25  ;km/s
@@ -84,7 +84,7 @@ init_milos,'5250.6',wl
 
 ;wavelength axis
 Init_landa=Wl(1)-0.4
-step=5d0 
+step=5d0
 Points=150.
 STEP=STEP/1000d0
 axis=Init_landa+Dindgen(Points)*step
@@ -97,16 +97,16 @@ milos, Wl, axis, init_model, y, rfs=rfs, /doplot
 
 OLD=INIT_MODEL
 ;Init model inversion
-B1=0.3 & B2=0.7	
-eta0=6d0	
-Magnet=100.     
+B1=0.3 & B2=0.7
+eta0=6d0
+Magnet=100.
 GAMMA=90.
 AZI=60.
 vlos=2.25  ;km/s
-MACRO=2.8
+MACRO=1.8
 LANDADOPP=0.01
 aa=0.03
-alfa=0. 
+alfa=0.
 INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
 
 fix=[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,0.]
@@ -116,7 +116,7 @@ weight=[1.,1.,1.,1.]
 INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
 milos, wl, axis, init_model, y, yfit=yfit,$
   fix=fix,/inversion,miter=100,noise=1.d-6,/doplot
-  
+
 Print,'Old model:' , OLD
 Print,'New model:' , init_model
 
@@ -128,7 +128,7 @@ init_milos,'5250.6',wl
 
 B1=0.2 & B2=0.8		;cociente B1/Bo terminos de la funcion de Planck b0+b1t
 eta0=6.5d0	        ;cociente entre coef. abs. de la linea y el continuo
-Magnet=1200.               ;campo magnŽtico que no es cero por problemas con svd
+Magnet=1200.               ;campo magnï¿½tico que no es cero por problemas con svd
 GAMMA=20.
 AZI=20.
 vlos=0.25  ;km/s
@@ -147,7 +147,7 @@ v=randomu(seed,1000)*4.-2.
 ;Landa inicial
 Init_landa=Wl(1)-0.4
 ;Step in mA
-step=10d0 
+step=10d0
 ;Samples
 Points=75.
 
@@ -195,7 +195,7 @@ plot,err(*,1)
 plot,err(*,0)
 plot,err(*,5)
 endps
-spawn,'open test.ps',dd     
+spawn,'open test.ps',dd
 
 chl=where(ch gt 1*3.,nl)
 print,''
@@ -214,7 +214,7 @@ laxis=landas(5:94)
 
 S0=0.2
 S1=0.8
-eta0=20.d0     
+eta0=20.d0
 Magnet=300.
 GM=15.
 AZ=15.
@@ -249,19 +249,19 @@ average=total(tmp_data(*,*,0),2)/1024.
 conti=mean(average(1:6))
 
 start = SYSTIME(/SECONDS)
-for i=0,1023 do begin 
-        profile(*,0)=reform(tmp_data(5:94,i,0))/conti 
-        profile(*,1)=reform(tmp_data(5:94,i,1))/conti 
-        profile(*,2)=reform(tmp_data(5:94,i,2))/conti 
-        profile(*,3)=reform(tmp_data(5:94,i,3))/conti 
+for i=0,1023 do begin
+        profile(*,0)=reform(tmp_data(5:94,i,0))/conti
+        profile(*,1)=reform(tmp_data(5:94,i,1))/conti
+        profile(*,2)=reform(tmp_data(5:94,i,2))/conti
+        profile(*,3)=reform(tmp_data(5:94,i,3))/conti
         init=init_model
 
             milos, wl, laxis, init, profile, yfit=yfit,fix=fix,/inversion,$
               chisqr=chisqr,miter=100,err=err,filter=30d0,$
               sigma=sigma,/doplot,weight=weight,/quiet,getshi=getshi,/ac_ratio
 
-            result(i,*)=init 
-            error(i,*)=err 
+            result(i,*)=init
+            error(i,*)=err
             chi(i)=chisqr
             chii(i,*)=getshi
             print,'CHISQR VALUE: ',chisqr, ' Profile: ', i
@@ -273,7 +273,7 @@ setpsc,filename='test.ps'
 !p.multi=0
 plot,chi,yrange=[1,30],title=palabra(elapsed_time)
 endps
-spawn,'open test.ps',dd     
+spawn,'open test.ps',dd
 
 end
 
@@ -283,7 +283,7 @@ init_milos,'6301',wl
 
 B1=0.2 & B2=0.8		;cociente B1/Bo terminos de la funcion de Planck b0+b1t
 eta0=6.5d0	        ;cociente entre coef. abs. de la linea y el continuo
-Magnet=1200.               ;campo magnŽtico que no es cero por problemas con svd
+Magnet=1200.               ;campo magnï¿½tico que no es cero por problemas con svd
 GAMMA=20.
 AZI=0.
 vlos=0.25  ;km/s
@@ -302,7 +302,7 @@ v=0.
 ;Landa inicial
 Init_landa=Wl(1)-0.4
 ;Step in mA
-step=10d0 
+step=10d0
 ;Samples
 Points=75.
 
@@ -344,9 +344,9 @@ loadct,0
 colors
 
 ;************************PHYSICS CONSTANTS (INITIAL)******************
-B1=0.2 & B2=0.8		
-eta0=12.5d0	        
-Magnet=200.            
+B1=0.2 & B2=0.8
+eta0=12.5d0
+Magnet=200.
 GAMMA=20.
 AZI=20.
 vlos=0.25  ;km/s
@@ -362,7 +362,7 @@ init_milos,'5250.2',wl
 
 ;wavelength axis
 Init_landa=Wl(1)-0.4
-step=5d0 
+step=5d0
 Points=150.
 STEP=STEP/1000d0
 axis=Init_landa+Dindgen(Points)*step
@@ -376,16 +376,16 @@ milos, Wl, axis, init_model, y, rfs=rfs, /doplot,n_comp=2
 WAIT,1
 OLD=INIT_MODEL
 ;Init model inversion
-B1=0.3 & B2=0.7	
-eta0=6d0	
-Magnet=100.     
+B1=0.3 & B2=0.7
+eta0=6d0
+Magnet=100.
 GAMMA=40.
 AZI=60.
 vlos=0.25  ;km/s
 MACRO=0.
 LANDADOPP=0.06
 aa=0.09
-alfa=0. 
+alfa=0.
 INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
 MODEL1=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
 MODEL2=[eta0,200,-5,landadopp,aa,170.,azi,B1,B2,macro,0.6]
@@ -405,8 +405,6 @@ Print,'New model:' , init_model
 stop
 end
 
-
-
 pro test_milos_6,chi
 
 init_milos,'63016302',wl
@@ -416,7 +414,7 @@ laxis=landas(5:94)
 
 S0=0.2
 S1=0.8
-eta0=20.d0     
+eta0=20.d0
 Magnet=300.
 GM=15.
 AZ=15.
@@ -477,25 +475,94 @@ readl1_sbsp,file,tmp_data,hdr
 average=total(tmp_data(*,*,0),2)/1024.
 conti=mean(average(1:6))
 
-for i=0,1023 do begin 
-        profile(*,0)=reform(tmp_data(5:94,i,0))/conti 
-        profile(*,1)=reform(tmp_data(5:94,i,1))/conti 
-        profile(*,2)=reform(tmp_data(5:94,i,2))/conti 
-        profile(*,3)=reform(tmp_data(5:94,i,3))/conti 
+for i=0,1023 do begin
+        profile(*,0)=reform(tmp_data(5:94,i,0))/conti
+        profile(*,1)=reform(tmp_data(5:94,i,1))/conti
+        profile(*,2)=reform(tmp_data(5:94,i,2))/conti
+        profile(*,3)=reform(tmp_data(5:94,i,3))/conti
         init=init_model
         diff=reform(total(tmp_data(5:94,0>(i-5):(i+5)<1023,*),2))/( (i+5)<1023 - 0>(i-5) +1.)/conti
 		diff(*,1:3) = 0.
-		
+
             milos, wl, laxis, init, profile, yfit=yfit,fix=fix,/inversion,$
               chisqr=chisqr,miter=100,err=err,filter=30d0,slight=diff,$
               sigma=sigma,/doplot,weight=weight,getshi=getshi,/ac_ratio,n_comp=2,/quiet;,/numerical;,/quiet
 
-            result(i,*)=init 
-            error(i,*)=err 
+            result(i,*)=init
+            error(i,*)=err
             chi(i)=chisqr
             chii(i,*)=getshi
             print,'CHISQR VALUE: ',chisqr, ' Profile: ', i
 endfor
 
-stop
+end
+
+pro test_milos_7
+
+  RESOLVE_ROUTINE, ['milos','mil_svd','mil_sinrf','me_der',$
+  'lm_mils','check_param','covarm','create_nc',$
+  'fvoigt','init_milos','quanten','weights',$
+  'weights_init']
+  RESOLVE_routine, ['filtro','macrotur'], /IS_FUNCTION
+
+  Profiler, /SYSTEM & Profiler
+
+loadct,0
+colors
+
+;************************PHYSICS CONSTANTS (INITIAL)******************
+B1=0.2 & B2=0.8
+eta0=12.5d0
+Magnet=1200.
+GAMMA=20.
+AZI=20.
+vlos=0.25  ;km/s
+MACRO=0;2.5
+LANDADOPP=0.09
+aa=0.09
+alfa=0.
+INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
+;**********************************************************
+init_milos,'5250.6',wl
+
+;wavelength axis
+Init_landa=Wl(1)-0.4
+step=5d0
+Points=150.
+STEP=STEP/1000d0
+axis=Init_landa+Dindgen(Points)*step
+
+milos, Wl, axis, init_model, y, /synthesis, /doplot
+
+WAIT,1
+
+milos, Wl, axis, init_model, y, rfs=rfs, /doplot
+
+OLD=INIT_MODEL
+;Init model inversion
+B1=0.3 & B2=0.7
+eta0=6d0
+Magnet=100.
+GAMMA=90.
+AZI=60.
+vlos=2.25  ;km/s
+MACRO=0.;1.8
+LANDADOPP=0.01
+aa=0.03
+alfa=0.
+INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
+
+fix=[1.,1.,1.,1.,1.,1.,1.,1.,1.,0.,0.]
+weight=[1.,1.,1.,1.]
+
+INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
+milos, wl, axis, init_model, y, yfit=yfit,ilambda = 10.,$
+  fix=fix,/inversion,miter=100,noise=1.d-6,/doplot,iter_info = iter_info,/use_svd_cordic
+
+Print,'Old model:' , OLD
+Print,'New model:' , init_model
+
+Profiler, /REPORT
+Profiler,/clear,/system
+Profiler,/clear,/reset
 end

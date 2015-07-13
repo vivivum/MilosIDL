@@ -1,20 +1,20 @@
 ;+
-; NAME: 
+; NAME:
 ;	LM_MILS
 ;
-; AUTHOR: 
-;	D. Orozco Su‡rez  	
-;						National Astronomical Observatory of Japan,Ê
+; AUTHOR:
+;	D. Orozco Suï¿½rez
+;						National Astronomical Observatory of Japan,ï¿½
 ;						2-21-1 Osawa, Mitaka, 181-8588, JAPAN
 ;						d.orozco@nao.ac.jp
 ;
-;	J.C. del Toro Iniesta  
-;						Instituto de Astrof’sica de Andaluc’a (CSIC)
-;						Apdo de Correos 3004, 18080 Granada, SPAIN 
+;	J.C. del Toro Iniesta
+;						Instituto de Astrofï¿½sica de Andalucï¿½a (CSIC)
+;						Apdo de Correos 3004, 18080 Granada, SPAIN
 ;						jti@iaa.es
 ;
 ; PURPOSE: Core routine of the MILOS procedure. It performs a non-linear least squares fit
-;          using the Levenberg-Marquardt algorithm 
+;          using the Levenberg-Marquardt algorithm
 ;
 ; CATEGORY: Spectropolarimetric fitting
 ;
@@ -61,10 +61,10 @@
 ;           SIGMA: Array with noise values for the profiles (standard deviations)
 ;                  Dimensions: (4)
 ;           ILAMBDA: Initial value for the Levenberg-Marquardt's fudge parameter
-;           FILTER: Width (in mA) of a Gaussian filter profile or array with the instrument 
+;           FILTER: Width (in mA) of a Gaussian filter profile or array with the instrument
 ;                   profile samples. Dimensions: N_ELEMENTS(AXIS)
 ;           NOISE: Scalar with the noise values for the Stokes profiles
-;           POL: Polarization threshold. If all Q, U, and V are below POL, then the 
+;           POL: Polarization threshold. If all Q, U, and V are below POL, then the
 ;                vector magnetic field is set to zero
 ;           MU: Scalar containing the cosine of the heliocentric angle
 ;           PLIMITS: Limitations on the model parameter changes can be imposed throught this keywork
@@ -72,7 +72,7 @@
 ;                    Each model parameter is associated with one element of the array
 ;                    The parameter can be bounded on the lower/upper side.
 ;            	PLIMITS.SET: scalar value indicating whether the parameter constraint in on/off
-;                            1-> on, 0-> off 
+;                            1-> on, 0-> off
 ;               PLIMITS.LIMITS: two element array with the lower/upper sides
 ;               DEFAULT LIMITS ARE:
 ;           	PLIMITS = replicate( {set:0, limits:[0d0,0d0]} , 11) ;define variable plimits
@@ -91,11 +91,11 @@
 ;           VLIMITS: The maximum change to be made in the model parameter can be imposed with VLIMITS
 ;                    Array of structures. Dimension (11).
 ;                    Each model parameter is associated with one element of the array
-;                    The maximum change can be set in both directions 
+;                    The maximum change can be set in both directions
 ;						VLIMITS[*].LIMITS(0) > DELTA < VLIMITS[*].LIMITS(1)
 ;            	VLIMITS.SET: scalar value indicating whether a parameter is limited or not
-;                            1-> on, 0-> off 
-;               VLIMITS.LIMITS: two element array with the maximum variation when decreasing/increasing 
+;                            1-> on, 0-> off
+;               VLIMITS.LIMITS: two element array with the maximum variation when decreasing/increasing
 ;                               the model parameter.
 ;               DEFAULT LIMITS ARE:
 ;           	VLIMITS = replicate( {set:0, limits:[0d0,0d0]} , 11) ;define variable vlimits
@@ -113,15 +113,15 @@
 ;
 ; OUTPUTS:
 ;           P_I: Array with the 11*c model-atmosphere parameters (overwritten)
-;           YFIT: Array with the fit Stokes profiles. 
+;           YFIT: Array with the fit Stokes profiles.
 ;                       Dimensions: (N_ELEMENTS(AXIS), 4)
-;           ERR: Array with errors in the model parameters. 
+;           ERR: Array with errors in the model parameters.
 ;                       Dimensions: N_ELEMENTS(MODEL)
 ;                       Assuming the true reduced chi-squared value is unity.
 ;                       ERR = SQRT(COVAR(DIAG)*OCHISQR*4*NPOINTS/NFREE)
 ;           CHISQF: Scalar with the chi^2 merit function of the inversion
 ;           ITER: Counter with the last iteration number
-;           GETSHI: Array with chi^2 or each Stokes parameter. 
+;           GETSHI: Array with chi^2 or each Stokes parameter.
 ;                       Dimensions: (4)
 ;
 ; COMMON BLOCKS:
@@ -130,7 +130,7 @@
 ;
 ; CALLED ROUTINES
 ;           WEIGHTS_INIT: Gives initial values to the Stokes profile weights
-;           ME_DER: Synthesizes the Stokes profiles and their derivatives with respect to 
+;           ME_DER: Synthesizes the Stokes profiles and their derivatives with respect to
 ;                   model parameters
 ;           COVARM: Calculates the gradient and approximate-Hessian (covariance) matrices
 ;           MIL_SVD: Inverts the covariance matrix through the singular-value-decomposition
@@ -138,9 +138,9 @@
 ;           CHECK_PARAM: Checks that parameters are within limits
 ;
 ; MODIFICATION HISTORY:
-; 	First beta version created, D Orozco Su‡rez (DOS) and J.C. del Toro Iniesta (JTI), 2007
+; 	First beta version created, D Orozco Suï¿½rez (DOS) and J.C. del Toro Iniesta (JTI), 2007
 ;   First beta documentation version, JTI, June 2008
-;	Improved documentation. 24 Feb 2009. DOS 
+;	Improved documentation. 24 Feb 2009. DOS
 ;	Changed TOPRINT keyword. It is now called QUIET. 24 Feb, 2009. DOS
 ;	Removed DOPLOT keyword. It is now in milos.pro. 24 Feb, 2009. DOS
 ;   Added keywork PLIMITS=plimits to pass to check_model procedure. 27 Feb, 2009. DOS
@@ -154,7 +154,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     triplet=triplet, QUIET=quiet,miter=miter, weight=weight,fix=fix,sigma=sigma,$
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
 	PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
-	N_COMP=n_comp,numerical=numerical,iter_info = iter_info
+	N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic
 
 ; Enviromental parameters
   prt=keyword_set(QUIET)
@@ -179,31 +179,31 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   nfree=DOUBLE(N_ELEMENTS(VALID)-NFIXSS)  ; Number of degrees of freedom
   npoints=(SIZE(STOKESPROF))(1)
   iter_info = {lmb:dblarr(miter+1),iter:0,citer:0}
-  
+
   if NFREE le 0 then begin
 	PRINT,'Not enough points'
 	return
   endif
   P_M=DBLARR(NTERMS) ;New model aprameters
-    
+
   goodc=0
   max_stored=Miter+1
   Params_stored=fltarr(nterms,max_stored)
-  
+
   ;TO BE IMPLEMENTED
   ;   ;INITIALIZATION
   ;   p_i(6)=atan(max(STOKESPROF(*,1))/max(STOKESPROF(*,2)))/2.*180/!dpi
   ;   signo=total(STOKESPROF(0:NPOINTS/2,3))-total(STOKESPROF(NPOINTS/2+1:*,3))
   ;   if signo lt 0 then p_i(5)=100. else p_i(5)=10.
-  
+
   ;INITIALIZING WEIGHTS
   WEIGHTS_INIT,NAXIS,STOKESPROF,w,sig,weight=weight,SIGMA=sigma,NOISE=noise
   CLANDA=0 ;SOME DEFINITIONS TO CONTROL THE FUDGE PARAMETER
-  REPITE=1 
+  REPITE=1
   pillado=0
   ITER=0  ;DEFINING FIRST ITER
   LANDA_STORE=DBLARR(MITER+1) ;Array to store lambda variation with iter
-  
+
   ;POLARIZATION THRESHOLD (If Stokes q, u, and v are below it, set B, GAMMA, and AZI to cero
   index=indgen(n_comp)
   IF keyword_set(pol) then begin
@@ -221,7 +221,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   ;The derivatives with respect to fixed parameters are set to cero
   fxx=where(fixed eq 1)
   for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
-  
+
 ; Take into account the local stray light in the merit function as in Asensio Ramos and Manso Sainz, 2010.
 If keyword_set(mlocal) then begin
 	;mlocal is the number of averaged pixels
@@ -238,16 +238,16 @@ If keyword_set(mlocal) then begin
   ;Computes the gradient, the covariance and the initial merit function value
   COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,CHISQR,drho=dhro
 
-  
+
 ;  flambda = 1.
 ;  Jope = max(alpha(diag))*1.e-8
 ;  if jope gt 1 then cuantos = (n_elements(digits_get(float(Jope)))) else flambda=0.1
 ;  for i=0,cuantos do flambda = flambda*10 ;< 1000000.
 ;  print,flambda
-  
+
   ;Store old chisqr value
   OCHISQR=CHISQR
-  
+
   ;SOME DEBUGGING STAFF
   ;   flambda=max(ALPHA(DIAG))*1d-6
   ;   ya=1 & ll=1.
@@ -261,66 +261,66 @@ If keyword_set(mlocal) then begin
   ;print,flambda
 
    P_M=P_I
-   
+
   ;BEGIND THE ITERATION LOOP FOR THE LM OPTIMIZATION ALGORITHM
 REPEAT BEGIN
 
 	iter_info.lmb[ITER] = FLAMBDA
-	
+
     IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
     COVAR=ALPHA
     COVAR(DIAG)=COVAR(DIAG)*(1.+FLAMBDA)
     BETAD=BETA
-    
+
 ;       INVERT COVARIANCE MATRIX TO FIND NEW MODEL PARAMETERS.
 
-    MIL_SVD,COVAR,BETAD,DELTA,LOSW 
+    MIL_SVD,COVAR,BETAD,DELTA,LOSW,use_svd_cordic = use_svd_cordic
 
 	;CHECK MAX VARIATION OF DELTA AND SET NEW MODEL P_M
 
     for i=0,11*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
-	DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1) 
+	DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1)
 
     P_M(fxx) = P_I(fxx) - DELTA(fxx) ;NEW PARAMS
-    
+
     ;CHECK PARAMETERS
     CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
 
 	;EVALUATE FUNCTION
     mil_sinrf,p_m,wli,AXIS,yfit,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
-    
+
 	;new chisqr
     CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
-    
+
     IF CHISQR-OCHISQR lt 0. then begin ;;FIT GOT BETTER
-    
+
       if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) OR (CHISQR lt 0.0001) $
         THEN CLANDA = 1 ;Stoping criteria
-        
+
       ;DECREASE FLAMBDA BY FACTOR OF 10
 
 ;help,delta,betad,OCHISQR,CHISQR,flambda,transpose(flambda*Delta - BETAD),(0.5*DELTA##transpose(flambda*Delta - BETAD));
 ;;	rho = abs((OCHISQR-CHISQR)/(0.5*DELTA##transpose(flambda*Delta - BETAD)))
 ;;	rho = rho[0] * 100.
-	;print, 'rho',rho 
+	;print, 'rho',rho
 
 ;;pbeta=2d0;6d0
 ;;pp=3d0
 ;rho = findgen(1000)/999.
 ;plot,rho,1-(pbeta-1)*(2*rho-1)^pp
 ;print, 'fidge', ((pbeta-1)*(2*rho-1)^pp+10)
-;flambda = flambda / ((pbeta-1)*(2*rho-1)^pp+10) ;*1-(pbeta-1)*(2*rho-1)^pp	
+;flambda = flambda / ((pbeta-1)*(2*rho-1)^pp+10) ;*1-(pbeta-1)*(2*rho-1)^pp
 
 
       flambda=flambda/10d0
             ;RNOISE_PROBLEM
       IF FLAMBDA LT 1 THEN BEGIN
-      II = 1d0 
+      II = 1d0
       REPEAT II = II * 10. UNTIL FLAMBDA-ROUND(FLAMBDA*II) LT 0
       II = II*10d0
       FLAMBDA = ROUND(FLAMBDA*II)/II
       ENDIF
-      
+
       ;flambda=flambda/(10d0);+(OCHISQR-CHISQR)/CHISQR)
       ;      ;SOME DEBUGGING STAFF
       ;if repite then begin
@@ -330,25 +330,25 @@ REPEAT BEGIN
       ;        flambda=flambda*0.5d0
       ;    endelse
       ;endif
-      
+
       ;store new model parameters
       P_I(fxx)=P_M(fxx)
-      
+
       Params_stored(*,goodc) = p_i
-	 
+
 	  goodc = goodc + 1
 	 ; if (goodc mod 10 eq 0)  then begin
 	 ;  	acc,goodc - 1,fxx,params_stored,pnew
 	 ;  	CHECK_PARAM,Pnew,PLIMITS=plimits
 	 ;   p_i = pnew
 	 ; endif
-	  
+
 
       IF not(prt) THEN PRINT,'ITERATION =',ITER,' , CHISQR =',CHISQR,$
         '  CONVERGE - LAMBDA= ',flambda,(OCHISQR-CHISQR)/CHISQR
 
       ;compute new RFs and Stokes profiles
- 
+
 	  me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical
       for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 
@@ -361,19 +361,19 @@ endif
       COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,OCHISQR,drho=dhro
 
     ENDIF ELSE BEGIN ;FIT GOT WORSE
-    
+
       ;increase flambda by a factor 10
-      
+
     flambda=flambda*10d0
-      
+
       ;RNOISE_PROBLEM
       IF FLAMBDA LT 1 THEN BEGIN
-      II = 1d0 
+      II = 1d0
       REPEAT II = II * 10. UNTIL FLAMBDA-ROUND(FLAMBDA*II) LT 0
       II = II*100d0
       FLAMBDA = ROUND(FLAMBDA*II)/II
       ENDIF
-      
+
        ;SOME DEBUGGING STAFF
       ;if flambda le 1.e-3 then begin
       ;    flambda=100d0*flambda
@@ -389,39 +389,38 @@ endif
       IF not(prt) THEN PRINT,'ITERATION =',ITER,' , CHISQR =',OCHISQR,$
         '  NOT CONVERGE - LAMBDA= ',flambda,(OCHISQR-CHISQR)/CHISQR
     ENDELSE
-    	
-	;Lambda storage to avoid oscillations in lambda, in such a case the inversion is finished 
+
+	;Lambda storage to avoid oscillations in lambda, in such a case the inversion is finished
     LANDA_STORE(ITER)=FLAMBDA
     if (ITER gt 5) $
     	AND (LANDA_STORE(ITER) eq LANDA_STORE(ITER-2)) $
     	AND (LANDA_STORE(ITER-1) eq LANDA_STORE(ITER-3)) then begin
-		flambda=flambda * 10d0 
+		flambda=flambda * 10d0
     endif
-    
+
     ITER=ITER+1
-    
-    
+
+
   ENDREP UNTIL (ITER GT MITER)
 
 	iter_info.iter = ITER
 	iter_info.citer = goodc
 
-  ;END OF MAIL LOOP AND INVERSION  
+  ;END OF MAIL LOOP AND INVERSION
 
 ;print,'ITER ' , ITER, 'goodc ',goodc, ' CHI ', OCHISQR
-  ;ERRORS  
+  ;ERRORS
 
   COVAR=1./ALPHA
   ERR = SQRT(COVAR(DIAG)*OCHISQR*4*NPOINTS/NFREE) ; Almeida
-  
+
   ;keep last merit function value
   CHISQF=OCHISQR
-    
+
   ;Stokes I, Q, U, and V merit function values.
   getshi=fltarr(4)
   for ii=0,3 do getshi(ii)=TOTAL(TOTAL((YFIT(*,ii)-STOKESPROF(*,ii))^2d0*W(*,ii),1,/double)/SIG(ii)^2d0,/double)/NFREE
-  
+
 ;  plot,LANDA_STORE;
 ;wait,0.2
 END
-
