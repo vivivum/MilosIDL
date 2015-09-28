@@ -83,7 +83,7 @@ INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
 init_milos,'5250.6',wl
 
 ;wavelength axis
-Init_landa=Wl(1)-0.4
+Init_landa=Wl(1)-0.5
 step=5d0
 Points=150.
 STEP=STEP/1000d0
@@ -177,25 +177,27 @@ for i=0,999 do begin
     INIT_MODEL=INIT
 
     milos, wl, eje, init_model, y, chisqr=chisqr,yfit=yfit,$
-      sigma=sigma,fix=fix,/inversion,miter=100,/quiet,/doplot,Err=rr
+      sigma=sigma,fix=fix,/inversion,miter=100,/quiet,/doplot,Err=rr,$
+      iter_info = iter_info
 	fm(i,*)=init_model
 	err(i,*)=rr
-	wait,0.01
+	;wait,0.01
     print,'CHISQR VALUE: ',chisqr, ' Profile: ', i
     ch(i)=chisqr
 
 endfor
+
 elapsed_time = SYSTIME(/SECONDS) - start
 print,elapsed_time
 
-setpsc,filename='test.ps'
+setpsc,filename='test2.ps'
 !p.multi=[0,2,2]
 plot,ch,yrange=[0,10],title=palabra(elapsed_time)
 plot,err(*,1)
 plot,err(*,0)
 plot,err(*,5)
 endps
-spawn,'open test.ps',dd
+spawn,'open test2.ps',dd
 
 chl=where(ch gt 1*3.,nl)
 print,''
@@ -332,8 +334,7 @@ ampQ = fltarr(100,180)
 for i=0,99 do for j=0,179 do ampV(i,j) = max(abs(pr(*,3,i,j)))
 for i=0,99 do for j=0,179 do ampQ(i,j) = max( [abs(pr(*,1,i,j)),abs(pr(*,2,i,j))])
 
-stop
-
+STOP
 end
 
 pro test_milos_5
@@ -397,7 +398,7 @@ fix=[fix1,fix2]
 weight=[1.,1.,1.,1.]
 
 milos, wl, axis, init_model, y, yfit=yfit,$
-  fix=fix,/inversion,miter=300,noise=1.d-6,/doplot,n_comp=2,/numerical
+  fix=fix,/inversion,miter=30,noise=1.d-6,/doplot,n_comp=2,/numerical
 
 Print,'Old model:' , OLD
 Print,'New model:' , init_model
@@ -565,4 +566,103 @@ Print,'New model:' , init_model
 Profiler, /REPORT
 Profiler,/clear,/system
 Profiler,/clear,/reset
+end
+
+
+pro test_milos_cordic
+
+init_milos,'5250.6',wl
+
+B1=0.2 & B2=0.8		;cociente B1/Bo terminos de la funcion de Planck b0+b1t
+eta0=6.5d0	        ;cociente entre coef. abs. de la linea y el continuo
+Magnet=1200.               ;campo magn�tico que no es cero por problemas con svd
+GAMMA=20.
+AZI=20.
+vlos=0.25  ;km/s
+LANDADOPP=0.03
+aa=0.03
+INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,0d0,1d0]
+;**********************************************************
+INIT_SYN=INIT_MODEL
+INIT=INIT_MODEL
+
+b=randomu(seed,1000)*3000.
+g=randomu(seed,1000)*180.
+a=randomu(seed,1000)*180.
+v=randomu(seed,1000)*4.-2.
+
+;Landa inicial
+Init_landa=Wl(1)-0.4
+;Step in mA
+step=10d0
+;Samples
+Points=75.
+
+STEP=STEP/1000d0
+fix=[1.,1.,1.,1.,1.,1.,1.,1.,1.,0.,0.]
+sigma=[1.,1.,1.,1.]/1000.
+
+eje=Init_landa+Dindgen(Points)*step
+
+ch=fltarr(1000,2)
+
+fm=fltarr(1000,11,2)
+err=fltarr(1000,11)
+
+start = SYSTIME(/SECONDS)
+for i=0,999 do begin
+
+    init_syn(1)=b(i)
+    init_syn(2)=v(i)
+    init_syn(5)=g(i)
+    init_syn(6)=a(i)
+
+    milos, Wl, eje, init_syn, y,/synthesis
+
+	y = y + randomn(Points,4,100)*1.e-3
+
+    INIT_MODEL=INIT
+
+    milos, wl, eje, init_model, y, chisqr=chisqr,yfit=yfit,$
+      sigma=sigma,fix=fix,/inversion,miter=100,/quiet,/doplot,Err=rr,$
+      iter_info = iter_info
+	fm(i,*,0)=init_model
+	err(i,*)=rr
+	;wait,0.01
+    print,'CHISQR VALUE: ',chisqr, ' Profile: ', i
+    ch(i,0)=chisqr
+
+endfor
+elapsed_time = SYSTIME(/SECONDS) - start
+print,elapsed_time
+
+start = SYSTIME(/SECONDS)
+for i=0,999 do begin
+
+    init_syn(1)=b(i)
+    init_syn(2)=v(i)
+    init_syn(5)=g(i)
+    init_syn(6)=a(i)
+
+    milos, Wl, eje, init_syn, y,/synthesis
+
+	y = y + randomn(Points,4,100)*1.e-3
+
+    INIT_MODEL=INIT
+
+    milos, wl, eje, init_model, y, chisqr=chisqr,yfit=yfit,$
+      sigma=sigma,fix=fix,/inversion,miter=100,/quiet,/doplot,Err=rr,$
+      iter_info = iter_info,/use_svd_cordic
+	fm(i,*,1)=init_model
+	err(i,*)=rr
+	;wait,0.01
+    print,'CHISQR VALUE: ',chisqr, ' Profile: ', i
+    ch(i,1)=chisqr
+
+endfor
+elapsed_time = SYSTIME(/SECONDS) - start
+print,elapsed_time
+
+STOP
+
 end

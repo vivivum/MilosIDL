@@ -226,7 +226,7 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
     FILTER=filter,NOISE=noise,POL=pol,GETSHI=getshi,DOPLOT=doplot,MU=mu,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
-  use_svd_cordic = use_svd_cordic
+  use_svd_cordic = use_svd_cordic,ipbs=ipbs
 
 COMMON QUANTIC,C_N
 
@@ -297,7 +297,7 @@ endif
   if keyword_set(synthesis) then begin
 
     mil_sinrf,MODEL,wli,AXIS,STOKESPROF,TRIPLET=triplet,SLIGHT=slight,$
-    FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP = n_comp
+    FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP = n_comp,ipbs=ipbs
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]
@@ -359,12 +359,12 @@ endif
 endif
 
 ;SET PLIMITS
-    index = indgen(n_comp)*11
+  index = indgen(n_comp)*11
 	PLIMITS = replicate( {set:0, limits:[0d0,0d0]} , 11* n_comp) ;define variable plimits
 	PLIMITS[*].SET = 1  ; Activate all limits
 	PLIMITS[index].LIMITS = [1d0,2500d0]  ; Eta0
 	PLIMITS[index+1].LIMITS = [0d0,4500d0]  ; Magnetic field
-	PLIMITS[index+2].LIMITS = [-20d0,20d0]  ; Velocity (km/s)
+	PLIMITS[index+2].LIMITS = [-100d0,100d0]  ; Velocity (km/s)
 	PLIMITS[index+3].LIMITS = [1d-4,6d-1]  ; Doppler width
 	PLIMITS[index+4].LIMITS = [1d-4,1d1]  ; Damping
 	PLIMITS[index+5].LIMITS = [0d0,180d0]  ; Inclination
@@ -387,7 +387,7 @@ if keyword_set(PARLIMITS) then begin
 		return
 	endif
 	check_size = Size(PARLIMITS)
-	If check_size(0) eq 1 then Howmany = 1 else Howmany = check_size(2)
+  If check_size(0) eq 1 then Howmany = 1 else Howmany = check_size(2)
 	FOR i=0, howmany -1 do begin
 		PLIMITS[PARLIMITS(0,i)].LIMITS = [ PARLIMITS(2,i) ,  PARLIMITS(3,i) ]
 		PLIMITS[PARLIMITS(0,i)].SET = PARLIMITS(1,i)
@@ -433,7 +433,7 @@ ENDIF
       FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,$
 	  GETSHI=getshi,MU=mu,PLIMITS=plimits,VLIMITS=vlimits,$
 	  AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
-	  iter_info = iter_info,use_svd_cordic = use_svd_cordic
+	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]
@@ -453,7 +453,7 @@ ENDIF
 
   endif else if ARG_PRESENT(RFS) then begin
 
-    ME_DER,MODEL,WLI,AXIS,STOKESPROF,RFS,TRIPLET=triplet,$
+    ME_DER,MODEL,WLI,AXIS,STOKESPROF,RFS,TRIPLET=triplet,ipbs=ipbs,$
     SLIGHT=slight,FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,numerical=numerical
 
   if keyword_set(doplot) then begin

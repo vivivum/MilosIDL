@@ -74,7 +74,7 @@
 ;-
 
 pro MIL_SINRF,PARAM,WL,LMB,SPECTRA,TRIPLET=triplet,MU=mu,SLIGHT=slight,$
-	FILTER=filter,AC_RATIO=ac_ratio,N_COMP=n_comp
+	FILTER=filter,AC_RATIO=ac_ratio,N_COMP=n_comp,ipbs=ipbs
 
 COMMON QUANTIC,C_N
 
@@ -82,6 +82,7 @@ lines=wl(0)
 
 IF NOT(KEYWORD_SET(mu)) THEN mu=1d0
 IF NOT(KEYWORD_SET(AC_RATIO)) THEN AC_RATIO=0
+IF (KEYWORD_SET(ipbs)) THEN he=1 else he=0
 
 ; Some initial settings
 
@@ -94,9 +95,12 @@ CC=!dpi/180d0  ; conversion factor to radians
 
 alpha = param(10)
 fill_fractions = dblarr(n_comp)
-if n_comp gt 1 then begin
-	fill_fractions(1:*)=param(11*(indgen(n_comp-1)+1)+10)
+if n_comp eq 2 then begin
+	fill_fractions(1)=param(11*(indgen(n_comp-1)+1)+10)
 	fill_fractions(0) = 1d0 - total(fill_fractions(1:*))
+endif else if n_comp gt 2 then begin
+	fill_fractions(1:*)=param(11*(indgen(n_comp-1)+1)+10)
+	fill_fractions(0) = param(10)
 endif else fill_fractions = 1d0
 
 for k=0,n_comp-1 do begin ;loop in components
@@ -113,6 +117,9 @@ AZI=param(11*k+6)
 B0=param(11*k+7)
 B1=param(11*k+8)
 MC=param(11*k+9)
+
+;recalculo los nñumeros cuanticos para paschen back
+if keyword_set(ipbs) then ipbs,MF,LD
 
 ETAI=1D0 & ETAQ=0D0 & ETAU=0D0 & ETAV=0D0  ; propagation matrix elements
 RHOQ=0D0 & RHOU=0D0 & RHOV=0D0
@@ -181,15 +188,13 @@ FOR IL=0,lines-1 DO BEGIN
         ; ABSORPTION AND DISPERSION PROFILES
 
         ; PI COMPONENTS
-
         FOR i=0,C_N(IL).N_PI-1 DO BEGIN
 
             ; Wavelength axis shifted by Doppler and Zeeman, in Doppler width units
-            UU=u-ulos-nupB(i)
-
+            UU=u-ulos-(nupB(i))
             fvoigt, A, UU, H, F
-            FI_P=FI_P+C_N(IL).wep(i)*H
-            SHI_P=SHI_P+C_N(IL).wep(i)*F
+            FI_P=FI_P+(C_N(IL).wep(i))*H
+            SHI_P=SHI_P+(C_N(IL).wep(i))*F
 
         ENDFOR
         SHI_P=2d0*SHI_P
@@ -199,8 +204,7 @@ FOR IL=0,lines-1 DO BEGIN
         FOR i=0,C_N(IL).N_SIG-1 DO BEGIN
 
             ; Wavelength axis shifted by Doppler and Zeeman, in Doppler width units
-            UU=u-ulos-nubB(i)
-
+            UU=u-ulos-(nubB(i))
             fvoigt, A, UU, H, F
             FI_B=FI_B+C_N(IL).web(i)*H
             SHI_B=SHI_B+C_N(IL).web(i)*F
@@ -213,8 +217,7 @@ FOR IL=0,lines-1 DO BEGIN
         FOR i=0,C_N(IL).N_SIG-1 DO BEGIN
 
             ; Wavelength axis shifted by Doppler and Zeeman, in Doppler width units
-            UU=u-ulos-nurB(i)
-
+            UU=u-ulos-(nurB(i))
             fvoigt,A,UU, H, F   ;R
             FI_R=FI_R+C_N(IL).wer(i)*H
             SHI_R=SHI_R+C_N(IL).wer(i)*F
@@ -359,7 +362,7 @@ spectra(*) = 0
 
 if n_comp gt 1 then begin
 for k=0,n_comp-1 do begin
-spectra = spectra + Spectra_comp(*,*,k)*fill_fractions(k)
+	spectra = spectra + Spectra_comp(*,*,k)*fill_fractions(k)
 endfor
 endif else spectra = Spectra_comp
 

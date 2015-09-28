@@ -1,43 +1,43 @@
 ;+
-; NAME: 
+; NAME:
 ;	QUANTEN
 ;
-; AUTHOR: 
-;	D. Orozco Suarez  	
-;						National Astronomical Observatory of Japan,Ê
+; AUTHOR:
+;	D. Orozco Suarez
+;						National Astronomical Observatory of Japan,ï¿½
 ;						2-21-1 Osawa, Mitaka, 181-8588, JAPAN
 ;						d.orozco@nao.ac.jp
 ;
-; PURPOSE: 
+; PURPOSE:
 ;	Evaluate the atomic quanten numbers for the anomalous zeeman effect in LS coupling
 ;
-; CATEGORY: 
+; CATEGORY:
 ;	Splitting
 ;
-; CALLING SEQUENCE: 
+; CALLING SEQUENCE:
 ;			QUANTEN, S1,S2,L1,L2,J1,J2,msig1,mpi,msig2,sig1,pi,sig2,g1,g2,geff
 ;
 ; INPUTS:
-;			S1,S2,L1,L2,J1,J2: S, L, and J quantum numbers of the line transition 
-;				for the lower (...1) and upper (...2) level 
+;			S1,S2,L1,L2,J1,J2: S, L, and J quantum numbers of the line transition
+;				for the lower (...1) and upper (...2) level
 ; OUTPUTS:
 ;			msig1, mpi, msig2, sig1, pi, sig2: position and strength of zeeman components
-;			g1, g2: Level landŽ factors
-;			geff; Effective LandŽ factor
-;           
+;			g1, g2: Level landï¿½ factors
+;			geff; Effective Landï¿½ factor
+;
 ; COMMON BLOCKS:
-;			NONE 
+;			NONE
 ;
 ; CALLED ROUTINES:
 ;           NONE
 ;
 ; MODIFICATION HISTORY:
-; 	First version created, D Orozco Su‡rez (DOS), 2004
+; 	First version created, D Orozco Suï¿½rez (DOS), 2004
 ;
 ;-
 
 
-PRO QUANTEN,S1,S2,L1,L2,J1,J2,msig1,mpi,msig2,sig1,pi,sig2,g1,g2,geff
+PRO QUANTEN,S1,S2,L1,L2,J1,J2,msig1,mpi,msig2,sig1,pi,sig2,g1,g2,geff,not_normalize=not_normalize
 
 ;1-> LOW
 ;2-> UP
@@ -142,12 +142,11 @@ for j=0,2*j1 do begin
     endfor
 endfor
 
-;normalization OF EACH COMPONENT
-
-pi=pi/total(pi)
-sig1=sig1/total(sig1)
-sig2=sig2/total(sig2)
+;normalization OF EACH COMPONENT (strength)
+if not(keyword_set(not_normalize)) then begin
+  pi=pi/total(pi)
+  sig1=sig1/total(sig1)
+  sig2=sig2/total(sig2)
+endif
 
 end
-
-

@@ -60,7 +60,7 @@ PRO MIL_SVD,H,BETA,DELTA,W,use_svd_cordic = use_svd_cordic
 ;print,'d1: ',d1
 ;print,'d2: ',d2
 ;print,'d3: ',d3
-print,CALL_EXTERNAL('mil_svd_c.so', 'mil_svd_c', d1,d2,I,D3, /CDECL)
+ejecuta = CALL_EXTERNAL('mil_svd_c.so', 'mil_svd_c', d1,d2,I,D3, /CDECL)
 ;print,'i: ',i
 ;print,'d1: ',d1
 ;print,'d2: ',d2

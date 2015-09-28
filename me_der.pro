@@ -1,16 +1,16 @@
 ;+
-; NAME: 
+; NAME:
 ;	ME_DER
 ;
-; AUTHOR: 
-;	D. Orozco Suárez  	
+; AUTHOR:
+;	D. Orozco Suárez
 ;						National Astronomical Observatory of Japan, 
 ;						2-21-1 Osawa, Mitaka, 181-8588, JAPAN
 ;						d.orozco@nao.ac.jp
 ;
-;	J.C. del Toro Iniesta  
+;	J.C. del Toro Iniesta
 ;						Instituto de Astrofísica de Andalucía (CSIC)
-;						Apdo de Correos 3004, 18080 Granada, SPAIN 
+;						Apdo de Correos 3004, 18080 Granada, SPAIN
 ;						jti@iaa.es
 ;
 ; PURPOSE: Synthesis of Stokes profiles with calculating response functions
@@ -41,7 +41,7 @@
 ;           SLIGHT: Array with the stray-light profile
 ;                       Dimensions: (N_ELEMENTS(LMB), 4)
 ;           MU: Scalar containing the cosine of the heliocentric angle
-;           FILTER: Width (in mA) of a Gaussian filter profile or array with the instrument 
+;           FILTER: Width (in mA) of a Gaussian filter profile or array with the instrument
 ;                   profile samples. Dimensions: N_ELEMENTS(LMB)
 ;
 ; KEYWORD PARAMETERS:
@@ -53,7 +53,7 @@
 ;           D_SPECTRA: Array with the output Stokes profiles Response Functions
 ;                       Dimensions: (N_ELEMENTS(AXIS), 4, N_ELEMENTS(PARAM))
 ;
-; COMMON BLOCKS: 
+; COMMON BLOCKS:
 ;           QUANTIC: Contains all the atomic data relevant to the spectral lines
 ;
 ; NOTES:
@@ -65,19 +65,20 @@
 ;
 ; CALLED ROUTINES
 ;           FVOIGT: Calculates the Voigt and Faraday-Voigt functions
-;           MACROTUR: Evaluates a Gauss function 
-;           FILTRO: Outputs a Gaussian filter instrumental profile in case that only the 
+;           MACROTUR: Evaluates a Gauss function
+;           FILTRO: Outputs a Gaussian filter instrumental profile in case that only the
 ;                   width is provided
 ;
 ; MODIFICATION HISTORY:
 ; 	First beta version created, D Orozco Suárez (DOS) and J.C. del Toro Iniesta (JTI), 2007
 ;   First beta documentation version, JTI, June 2008
 ;   Improved documentation, DOS, 24 Feb, 2009
-;
+;   2015 n_comp
 ;-
 
 pro ME_DER,param,wl,lmb,spectra,d_spectra,TRIPLET=triplet,SLIGHT=slight,$
-           FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical
+           FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,$
+           ipbs=ipbs
 
 
 COMMON QUANTIC,C_N
@@ -111,18 +112,22 @@ RR=5.641895836D-1
 CC=!dpi/180d0  ; conversion factor to radians
 NUML=n_elements(LMB)
 D_SPECTRA=DBLARR(NUML,NTERMS,4) ;E0,MF,VL,LD,A,GM,AZI,DB,MC
-D_SPECTRA_comp=DBLARR(NUML,NTERMS,4,n_comp) 
+D_SPECTRA_comp=DBLARR(NUML,NTERMS,4,n_comp)
 SPECTRA=DBLARR(NUML,4)
 SPECTRA_comp=DBLARR(NUML,4,n_comp)
 Vlight=2.99792458D+5   ; speed of light (cm/s)
 
 alpha = param(10)
 fill_fractions = dblarr(n_comp)
-if n_comp gt 1 then begin
-	fill_fractions(1:*)=param(11*(indgen(n_comp-1)+1)+10) 
-	fill_fractions(0) = 1d0 - total(fill_fractions(1:*))
+if n_comp eq 2 then begin
+  fill_fractions(1:*)=param(11*(indgen(n_comp-1)+1)+10)
+  fill_fractions(0) = 1d0 - total(fill_fractions(1:*))
+endif else if n_comp gt 2 then begin
+  fill_fractions(1:*)=param(11*(indgen(n_comp-1)+1)+10)
+  fill_fractions(0) = param(10)
 endif else fill_fractions = 1d0
-	
+
+
 for k=0,n_comp-1 do begin ;loop in components
 
 ;Model atmosphere parameters E0,MF,VL,LD,A,GM,AZI,B1,B2,MC,ALPHA
@@ -136,7 +141,9 @@ GM=param(11*k+5)
 AZI=param(11*k+6)
 B0=param(11*k+7)
 B1=param(11*k+8)
-MC=param(11*k+9) 
+MC=param(11*k+9)
+
+if keyword_set(ipbs) then ipbs,MF,LD
 
  ; propagation matrix elements derivatives
 D_EI=DBLARR(NUML,7) ;D_ETAI
@@ -175,19 +182,19 @@ cosdi=-sin(gm)*cc
 For IL=0,Lines-1 do begin
 
 	;ratio
-	ratio = C_N(IL).Fo  
-	; Ratio 6301. / 6302.  = 2.92000 
+	ratio = C_N(IL).Fo
+	; Ratio 6301. / 6302.  = 2.92000
 	; 1 / ratio = 0.342466 =  1. / 2.92000   ;teoretically 0.5444
-	
+
 	if (ratio ne 1) and (ac_ratio) then begin
 		coeffa = [1.01702d-4, -9.33108d-3, 5.41421d-1, 3.11270d-2 ]
 		coeffb = [2.26080d-1, 4.11138d0 ]
 		if (E00 le 38) then begin
 
 			E0 = coeffa(0)*E00^3d0 + coeffa(1)*E00^2d0 + $
-	    	    coeffa(2)*E00 + coeffa(3) 
+	    	    coeffa(2)*E00 + coeffa(3)
 			DE0 = 3.*coeffa(0)*E00^2d0 + 2*coeffa(1)*E00 + coeffa(2)
-		
+
 		endif else if (E00 lt 300) then begin
 
 			E0 = coeffb(0)*E00 + coeffb(1)
@@ -319,7 +326,7 @@ For IL=0,Lines-1 do begin
         ; PI COMPONENT
 
 	    fvoigt, A, U-ULOS, H, F
-	    FI_P=H & SHI_P=F	
+	    FI_P=H & SHI_P=F
 	    SHI_P=2d0*SHI_P
 
 	    dH_u=4D0*A*F-2D0*(U-ULOS)*H
@@ -361,7 +368,7 @@ For IL=0,Lines-1 do begin
 	    fvoigt, A, U-ULOS-SHIF*MF, H, F
 	    FI_R=H & SHI_R=F
 	    SHI_R=2d0*SHI_R
-	
+
 	    dH_u=4D0*A*F-2D0*(U-ULOS-SHIF*MF)*H
 	    dF_u=RR-A*H-2D0*(U-ULOS-SHIF*MF)*F
 	    dH_a=-2D0*dF_u
@@ -370,7 +377,7 @@ For IL=0,Lines-1 do begin
 	    DFI(*,1,2)=dH_u*(-wl(IL+1))/(vlight*LD)
 	    DFI(*,3,2)=dH_a ;A
 	    DSHI(*,1,2)=dF_u*(-wl(IL+1))/(vlight*LD)
-	    DSHI(*,3,2)=dF_a ;A 
+	    DSHI(*,3,2)=dF_a ;A
 	    DFI(*,0,2)=dh_u*(-SHIF) ;B
 	    DSHI(*,0,2)=df_u*(-SHIF) ;B
 	    DFI(*,2,2)=(dh_u*(-(U-ULOS-SHIF*MF)/LD)) ;LD
@@ -435,7 +442,7 @@ ENDELSE
 
 ENDFOR
 
-; THE STOKES PROFILES AND THEIR RESPONSE FUNCTIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+; THE STOKES PROFILES AND THEIR RESPONSE FUNCTIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Are Stokes profiles here normalized to continuum intentity? NO
 
@@ -478,7 +485,7 @@ FOR ITER=0,6 DO BEGIN
 		ETAI*(RHOV*D_EQ(*,ITER)+ETAQ*D_RV(*,ITER)-RHOQ*D_EV(*,ITER)-ETAV*D_RQ(*,ITER))
 
 	D_SPECTRA(*,ITER,2)=-B1*MU*((DGP5+D_RU(*,ITER)*GP2+RHOU*DGP2)*DT-D_DT*(GP5+RHOU*GP2))/DT^2D0
-	
+
 	DGP6=D_EI(*,ITER)*(2D0*ETAI*ETAV+ETAU*RHOQ-ETAQ*RHOU)+ETAI^2D0*D_EV(*,ITER)+$
 		ETAI*(RHOQ*D_EU(*,ITER)+ETAU*D_RQ(*,ITER)-RHOU*D_EQ(*,ITER)-ETAQ*D_RU(*,ITER))
 
@@ -565,16 +572,16 @@ ENDIF
 IF keyword_set(filter) THEN BEGIN
     DIMF=n_elements(filter)
     If dimf gt 1 then begin  ; The full filter profile is provided in this case
-    
+
        ;CHECK IF FILTER SIZE IS LARGER THAN SPECTUM
     IF NUML lt DIMF then begin
     	;EXTEND THE PROFILES
-    	
+
     	SPECTRA_EXT = DBLARR(DIMF,4)
     	SPECTRA_EXT (DIMF/2-NUML/2:DIMF/2+NUML/2, *) = SPECTRA(0:NUML-1,*)
     	SPECTRA_EXT (0:DIMF/2-NUML/2-1, 0) = SPECTRA_EXT (DIMF/2-NUML/2, 0)
     	SPECTRA_EXT (DIMF/2+NUML/2+1:*, 0) = SPECTRA_EXT (DIMF/2+NUML/2, 0)
-   
+
     	D_SPECTRA_EXT = DBLARR(DIMF,11,4)
     	D_SPECTRA_EXT (DIMF/2-NUML/2:DIMF/2+NUML/2, *,*) = D_SPECTRA(0:NUML-1,*,*)
     	D_SPECTRA_EXT (0:DIMF/2-NUML/2-1, 8,0) = D_SPECTRA_EXT (DIMF/2-NUML/2, 8,0)
@@ -583,7 +590,7 @@ IF keyword_set(filter) THEN BEGIN
     			D_SPECTRA_EXT = SPECTRA
 				SPECTRA_EXT = SPECTRA
     	ENDELSE
-    	
+
         FFTF=FFT(filter, -1, /double)/total(filter)*dimf; Normalizing in area...
         SH=(WHERE(filter eq max(filter)))(0)
 
@@ -621,7 +628,7 @@ IF keyword_set(filter) THEN BEGIN
 	                D_SPECTRA_EXT(*,ITER,PAR)=shift(D_SPECTRA_EXT(*,ITER,PAR),-SH)
                 ENDIF
             ENDFOR
-                
+
         ENDFOR
          D_SPECTRA(*, *, *) = D_SPECTRA_EXT(DIMF/2-NUML/2:DIMF/2+NUML/2, *, *)
 
@@ -676,7 +683,7 @@ endfor ;COMPONENTS
 ;adding components
 
 spectra(*) = 0
-D_SPECTRA=DBLARR(NUML,NTERMS*n_comp,4) 
+D_SPECTRA=DBLARR(NUML,NTERMS*n_comp,4)
 
 if n_comp gt 1 then begin
 for k=0,n_comp-1 do begin
@@ -684,10 +691,14 @@ spectra = spectra + Spectra_comp(*,*,k)*fill_fractions(k)
 endfor
 ;la derivada no se suma!
 for k=0,n_comp-1 do begin
-D_SPECTRA(*,11*k:11*(k+1)-1,*) =  D_SPECTRA_comp(*,*,*,k)*fill_fractions(k)
+    D_SPECTRA(*,11*k:11*(k+1)-1,*) =  D_SPECTRA_comp(*,*,*,k)*fill_fractions(k)
 endfor
 ;Derivative with respefct fill fractions
-for k=1,n_comp-1 do D_SPECTRA(*,11*k+10,*) = Spectra_comp(*,*,k) - Spectra_comp(*,*,0)
+if n_comp eq 2 then begin
+  D_SPECTRA(*,11+10,*) = Spectra_comp(*,*,1) - Spectra_comp(*,*,0)
+endif else if n_comp gt 2 then begin
+  for k=0,n_comp-1 do D_SPECTRA(*,11*k+10,*) = Spectra_comp(*,*,k)
+endif
 
 endif else begin
 spectra = Spectra_comp
@@ -705,7 +716,7 @@ IF keyword_set(slight) THEN BEGIN
 
 	;Magnetic filling factor Response Function
     D_SPECTRA(*,10,*)=SPECTRA-slight
-    
+
 	;Stokes profiles
     SPECTRA=SPECTRA*alpha+slight*(1D0-alpha)
 
@@ -714,7 +725,7 @@ ENDIF
 goto,borralo
 If keyword_set(numerical) then begin
 
-pder1=d_spectra 
+pder1=d_spectra
 
 !p.multi=[0,4,6]
 ERASE
@@ -741,7 +752,7 @@ pause
 ERASE
 FOR J=0,nterms*n_comp-1 DO BEGIN
     PLOT,PDER(*,j,3),TITLE='V'
-    OPLOT,PDER1(*,j,3),line=2,thick=2 
+    OPLOT,PDER1(*,j,3),line=2,thick=2
 ENDFOR
 pause
 d_spectra = pder

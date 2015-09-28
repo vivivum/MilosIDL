@@ -1,26 +1,26 @@
 ;+
-; NAME: 
+; NAME:
 ;   INIT_MILOS
 ;
-; AUTHOR: 
-;   D. Orozco Suarez  	
+; AUTHOR:
+;   D. Orozco Suarez
 ;      National Astronomical Observatory of Japan,
 ;      2-21-1 Osawa, Mitaka, 181-8588, JAPAN
 ;      d.orozco@nao.ac.jp
 ;
-;   J.C. del Toro Iniesta  
+;   J.C. del Toro Iniesta
 ;      Instituto de Astrofisica de Andalucia (CSIC)
-;      Apdo de Correos 3004, 18080 Granada, SPAIN 
+;      Apdo de Correos 3004, 18080 Granada, SPAIN
 ;      jti@iaa.es
 ;
-; PURPOSE: 
-;   SETUP OF MILOS CODE. MANDATORY TO EXECUTE TO USE MILOS. 
+; PURPOSE:
+;   SETUP OF MILOS CODE. MANDATORY TO EXECUTE TO USE MILOS.
 ;   IT CREATES THE COMMON BLOCK QUANTEN AND ALSO COMPILE ALL NECESSARY ROUTINES BY MILOS.
 ;
-; CATEGORY: 
+; CATEGORY:
 ;   Spectropolarimetric fitting
 ;
-; CALLING SEQUENCE: 
+; CALLING SEQUENCE:
 ;   INIT_MILOS, LINES, WLI
 ;
 ; INPUTS:
@@ -50,10 +50,10 @@
 ; MODIFICATION HISTORY:
 ;   First beta version created, D Orozco Suarez (DOS), 2008
 ;   Added some error handling, 24 Feb, 2008
-;   Changed eta ceto from 0.342466 to 0.3266, 21 Jan, 2010. DOS 
+;   Changed eta ceto from 0.342466 to 0.3266, 21 Jan, 2010. DOS
 ;-
 
-pro init_milos,LINES,WLI
+pro init_milos,LINES,WLI,quiet=quiet,not_normalize=not_normalize
 
 ;Check input parameters
 IF N_PARAMS() NE 2 THEN BEGIN
@@ -131,10 +131,10 @@ print,'### Fe 6302.5 ###'
 '63016302': BEGIN
 print,'### Fe 6301.5 + Fe 6302.5 ###'
            wl=[6301.5012d0 , 6302.4936d0]
-           slo1=2 & llo1=1 & jlo1=2 
-           sup1=2 & lup1=2 & jup1=2 
-           slo2=2 & llo2=1 & jlo2=1 
-           sup2=2 & lup2=2 & jup2=0 
+           slo1=2 & llo1=1 & jlo1=2
+           sup1=2 & lup1=2 & jup1=2
+           slo2=2 & llo2=1 & jlo2=1
+           sup2=2 & lup2=2 & jup2=0
            DATA=[2.,slo1,llo1,jlo1,sup1,lup1,jup1,1.,$
                   slo2,llo2,jlo2,sup2,lup2,jup2,0.3266];0.342466]
             END
@@ -143,8 +143,8 @@ print,'### Fe 5250.2 + Fe 5250.6 ###'
            wl=[5250.208d0 , 5250.645d0]
            slo1=2 & llo1=2 & jlo1=0
            sup1=3 & lup1=2 & jup1=1
-           slo2=2 & llo2=1 & jlo2=2 
-           sup2=2 & lup2=1 & jup2=3 
+           slo2=2 & llo2=1 & jlo2=2
+           sup2=2 & lup2=1 & jup2=3
            DATA=[2.,slo1,llo1,jlo1,sup1,lup1,jup1,1.,$
                   slo2,llo2,jlo2,sup2,lup2,jup2,0.3]
             END
@@ -179,15 +179,36 @@ print,'### Fe 6767.79 ###'
 '10830': BEGIN
 print,'### HELIUM LINE TRIPLET (SL COUPLING) ###'
            WL = [ 10830.2501d0, 10830.3397d0, 10829.0911d0]
-           slo0=1 & llo0=0 & jlo0=1 
-           sup0=1 & lup0=1 & jup0=1 
-           slo1=1 & llo1=0 & jlo1=1 
-           sup1=1 & lup1=1 & jup1=2 
-           slo2=1 & llo2=0 & jlo2=1 
-           sup2=1 & lup2=1 & jup2=0 
+           slo0=1 & llo0=0 & jlo0=1
+           sup0=1 & lup0=1 & jup0=1
+           slo1=1 & llo1=0 & jlo1=1
+           sup1=1 & lup1=1 & jup1=2
+           slo2=1 & llo2=0 & jlo2=1
+           sup2=1 & lup2=1 & jup2=0
            DATA=[3.,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333,$
                 slo1,llo1,jlo1,sup1,lup1,jup1,0.556,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111]
         END
+				'10830+si': BEGIN
+				print,'### HELIUM LINE TRIPLET (SL COUPLING) + Silicon ###'
+				           WL = [10827.089d0,10830.2501d0, 10830.3397d0, 10829.0911d0]
+									 slo=1 & llo=1 & jlo=2
+									 sup=1 & lup=1 & jup=2
+				           slo0=1 & llo0=0 & jlo0=1
+				           sup0=1 & lup0=1 & jup0=1
+				           slo1=1 & llo1=0 & jlo1=1
+				           sup1=1 & lup1=1 & jup1=2
+				           slo2=1 & llo2=0 & jlo2=1
+				           sup2=1 & lup2=1 & jup2=0
+				           DATA=[4.,slo,llo,jlo,sup,lup,jup,1,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333,$
+				                slo1,llo1,jlo1,sup1,lup1,jup1,0.556,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111]
+				        END
+								'si': BEGIN
+								print,'### Silicon ###'
+								           WL = [10827.089d0]
+													 slo=1 & llo=1 & jlo=2
+													 sup=1 & lup=1 & jup=2
+								           DATA=[1.,slo,llo,jlo,sup,lup,jup,1]
+								        END
         ;3=FE 1      15648.515       1.0         5.426    -0.669  7D 1.0- 7D 1.0  0.229  2.7289e-14
 		'15648': BEGIN
 print,'### Fe 15648 ###'
@@ -196,7 +217,7 @@ print,'### Fe 15648 ###'
            sup=3 & lup=2 & jup=1
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
         END
-        
+
 ELSE: BEGIN
 	print,' '
 	print,' ------------  ATTENTION: LINE NOT FOUND  -----------------------'
@@ -215,9 +236,9 @@ ELSE: BEGIN
 	print,' '
 	return
         END
-ENDCASE 
+ENDCASE
 
-CREATE_NC,DATA
+CREATE_NC,DATA,not_normalize=not_normalize
 
 WLI = FLTARR ( N_ELEMENTS ( WL ) + 1)
 WLI[0] = N_ELEMENTS ( WL )

@@ -154,7 +154,8 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     triplet=triplet, QUIET=quiet,miter=miter, weight=weight,fix=fix,sigma=sigma,$
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
 	PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
-	N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic
+	N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
+  ipbs=ipbs
 
 ; Enviromental parameters
   prt=keyword_set(QUIET)
@@ -216,7 +217,8 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   endif
 
   ;Compute the ME RFs and the initial synthetic Stokes profiles for INIT MODEL
-  ME_DER,p_i,wli,AXIS,yfit,pder,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,AC_RATIO=ac_ratio,N_COMP=n_comp,numerical=numerical
+  ME_DER,p_i,wli,AXIS,yfit,pder,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,$
+    AC_RATIO=ac_ratio,N_COMP=n_comp,numerical=numerical,ipbs=ipbs
 
   ;The derivatives with respect to fixed parameters are set to cero
   fxx=where(fixed eq 1)
@@ -287,7 +289,8 @@ REPEAT BEGIN
     CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
 
 	;EVALUATE FUNCTION
-    mil_sinrf,p_m,wli,AXIS,yfit,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
+    mil_sinrf,p_m,wli,AXIS,yfit,triplet=triplet,slight=slight,filter=filter,$
+      AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs
 
 	;new chisqr
     CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
@@ -349,7 +352,8 @@ REPEAT BEGIN
 
       ;compute new RFs and Stokes profiles
 
-	  me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical
+	  me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,$
+      AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs
       for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 
 If keyword_set(mlocal) then begin
