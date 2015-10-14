@@ -3,7 +3,7 @@ pro MILOS_prll_v5,THREADS=threads,Block_data=block_data,xrange=xrange,yrange=yra
                   badpixel=badpixel,simple=simple,max_iter=max_iter,init_lambda=init_lambda,$
                   not_normalize=not_normalize,waxis = waxis,INITIAL_MODEL=INITIAL_MODEL,IMAX_SAVE=imax_save,$
                   filter_width=filter_width,weights=weights,fix=fix,sigma=sigma,icontlimit=icontlimit,line=line,muestreo=muestreo,$
-                  slight=slight,mlocal=mlocal
+                  slight=slight,mlocal=mlocal,ipbs=ipbs,n_components=n_components
 
 ;Block_data = variable containing the data [X, Y, Wavelengths, Stokes profiles], or a save file (ending in .sav)
 ;line = spectral line (see milos)
@@ -57,13 +57,13 @@ print, '---------------------------------------------------     '
 ;****************************************************
 
 ;READ INPUT IMaX DATA. The program assumes IID name for IMaX data and all data in block input
- 
+
 if keyword_set(IMaX_save) then begin
-	;save_img=OBJ_NEW('IDL_Savefile', '../Data/reduc_163_346.save') 
+	;save_img=OBJ_NEW('IDL_Savefile', '../Data/reduc_163_346.save')
 	check=file_test(IMaX_save)
 	if check eq 0 then message,"IMaX_save file does not exist" else print,'reading... '+IMaX_save
 	restore,IMaX_save,/verbose
-	;save_img=OBJ_NEW('IDL_Savefile', IMaX_save) 
+	;save_img=OBJ_NEW('IDL_Savefile', IMaX_save)
 	;var_name=save_img->Names()
 	;dimensions=save_img->Size(var_name(0),/dimensions)
     Print,'Restoring data...'
@@ -109,8 +109,8 @@ endelse
 ;Update dimensionss_x,s_y
 
 sz = size(Block_data)
-npr_x = sz(1) 
-npr_y = sz(2) 
+npr_x = sz(1)
+npr_y = sz(2)
 npr_total = npr_x * npr_y ;total number of pixels
 if not(keyword_set(sblocks)) then blocks = 25 else blocks=sblocks  ;Size of the blocks
 
@@ -174,9 +174,9 @@ endif else wt = weights
 if not(keyword_set(INITIAL_MODEL)) then begin
 
 ;initial model
-S0=0.2d0 & S1=0.95d0		
-eta0=4.5d0	        
-Magnet=1200.            
+S0=0.2d0 & S1=0.95d0
+eta0=4.5d0
+Magnet=1200.
 GAMMA=45d0
 AZI=45d0
 vlos=0.25d0  ;km/s
@@ -209,7 +209,7 @@ if keyword_set(simple) then simple = 1 else simple = 0
 ;Number of threads
 nbparallel = !CPU.TPOOL_NTHREADS ; 1 thread per core
 if keyword_set(threads) then begin
-    nbparallel = nbparallel < threads 
+    nbparallel = nbparallel < threads
 endif else begin
     nbparallel = !CPU.TPOOL_NTHREADS ; 1 thread per core
     threads = nbparallel
@@ -254,19 +254,19 @@ endfor
 ;oBridge[i] = obj_new('IDL_IDLBridge', Callback='bridgeFunctionCallback')
 
 ;  oBridge[i].setProperty, userData=0
-  
+
 ;setup IDL and milos in each child
 
 for ipar=0L,nbparallel-1 do begin
     print,'Initiallizing IDL/PATH in thread... ',ipar
-    (*bridges[ipar])->Execute, startup_file 
-    if (*bridges[ipar])->Status() then message,'Thread busy. Come back again later.',/info 
+    (*bridges[ipar])->Execute, startup_file
+    if (*bridges[ipar])->Status() then message,'Thread busy. Come back again later.',/info
 endfor
 
 for ipar=0L,nbparallel-1 do begin
     print,'Initiallizing MILOS in thread ',ipar
 	(*bridges[ipar])->SetVar, "line", line
-    (*bridges[ipar])->Execute, "init_milos,''+line+'',wl" 
+    (*bridges[ipar])->Execute, "init_milos,''+line+'',wl"
 	print,(*bridges[ipar])->GetVar( "wl")
 endfor
 
@@ -318,24 +318,24 @@ for ipar=0L,nbparallel-1 do begin
 	if stats[ipar] eq 0 then begin
             toop_x = (blocks*(iprof_x+1)-1)<(npr_x-1) - blocks*iprof_x
             toop_y = (blocks*(iprof_y+1)-1)<(npr_y-1) - blocks*iprof_y
-            ely = Block_data(blocks*iprof_x:(blocks*(iprof_x+1)-1)<(npr_x-1), blocks*iprof_y:(blocks*(iprof_y+1)-1)<(npr_y-1),*,*)    
+            ely = Block_data(blocks*iprof_x:(blocks*(iprof_x+1)-1)<(npr_x-1), blocks*iprof_y:(blocks*(iprof_y+1)-1)<(npr_y-1),*,*)
             ;en caso de que el muestreo sea diferente, este entra en muestreo
             if muestreo NE !NULL then begin
             y = fltarr(toop_x+1 , toop_y+1,landas,4)
-            for ii = 0, n_landas-1 do y(*,*,muestreo(ii),*) = ely(*,*,ii,*)   
+            for ii = 0, n_landas-1 do y(*,*,muestreo(ii),*) = ely(*,*,ii,*)
             endif else y = ely
             if keyword_set(slight) then begin
             	if not(keyword_set(mlocal)) then begin
                 	(*bridges[ipar])->SetVar, "slight", slight
             	endif else begin
-                	slight_block = slight(blocks*iprof_x:(blocks*(iprof_x+1)-1)<(npr_x-1), blocks*iprof_y:(blocks*(iprof_y+1)-1)<(npr_y-1),*,*)    
+                	slight_block = slight(blocks*iprof_x:(blocks*(iprof_x+1)-1)<(npr_x-1), blocks*iprof_y:(blocks*(iprof_y+1)-1)<(npr_y-1),*,*)
                 	(*bridges[ipar])->SetVar, "slight", slight_block
                 	(*bridges[ipar])->SetVar, "mlocal", mlocal
                 endelse
             endif
             (*bridges[ipar])->SetVar, "y", y
-            (*bridges[ipar])->SetVar, "iprof_x", iprof_x ;x block id 
-            (*bridges[ipar])->SetVar, "iprof_y", iprof_y ;y block id 
+            (*bridges[ipar])->SetVar, "iprof_x", iprof_x ;x block id
+            (*bridges[ipar])->SetVar, "iprof_y", iprof_y ;y block id
             (*bridges[ipar])->Execute, 'milos_int_v5,Y,VARS,final_model,yfited,Err,chisqr,slight=slight,mlocal=mlocal',/nowait
 
         print,'Processing block ',strtrim(string(iprof_x+iprof_y*nblock_x+1),2),$
@@ -354,12 +354,12 @@ for ipar=0L,nbparallel-1 do begin
     stats[ipar] = (*bridges[ipar])->Status()
     if stats[ipar] eq 2 then begin
 
-        which_iprof_x = (*bridges[ipar])->GetVar('iprof_x') ;; get the profile id 	    
-        which_iprof_y = (*bridges[ipar])->GetVar('iprof_y') ;; get the profile id 	    
-        var1 = (*bridges[ipar])->GetVar("final_model") ;; get the result 
-        var2 = (*bridges[ipar])->GetVar("Err") ;; get the result 
-        var3 = (*bridges[ipar])->GetVar("chisqr") ;; get the result 
-        ;var4 = (*bridges[ipar])->GetVar("yfited") ;; get the result 
+        which_iprof_x = (*bridges[ipar])->GetVar('iprof_x') ;; get the profile id
+        which_iprof_y = (*bridges[ipar])->GetVar('iprof_y') ;; get the profile id
+        var1 = (*bridges[ipar])->GetVar("final_model") ;; get the result
+        var2 = (*bridges[ipar])->GetVar("Err") ;; get the result
+        var3 = (*bridges[ipar])->GetVar("chisqr") ;; get the result
+        ;var4 = (*bridges[ipar])->GetVar("yfited") ;; get the result
 
 		print,'Thread ',strtrim(string(ipar),2),' finished.',' Block ',$
                   strtrim(string(which_iprof_x+which_iprof_y*nblock_x+1),2),$
@@ -370,7 +370,7 @@ for ipar=0L,nbparallel-1 do begin
         de_x = blocks*which_iprof_x<(npr_x-1)
         hasta_x = (blocks*(which_iprof_x+1)-1)<(npr_x-1)
 		de_y = blocks*which_iprof_y<(npr_y-1)
-		hasta_y = (blocks*(which_iprof_y+1)-1)<(npr_y-1)     
+		hasta_y = (blocks*(which_iprof_y+1)-1)<(npr_y-1)
 
 		final_model(de_x:hasta_x,de_y:hasta_y,*) = var1
 		errors(de_x:hasta_x,de_y:hasta_y,*) = var2
@@ -378,33 +378,33 @@ for ipar=0L,nbparallel-1 do begin
 		;final_fit(de_x:hasta_x,de_y:hasta_y,*,*) = var4
 
 		if iprof lt nblock_x*nblock_y then begin ; set new profile
-  
+
 
                     de_x = blocks*iprof_x<(npr_x-1)
                     hasta_x = (blocks*(iprof_x+1)-1)<(npr_x-1)
                     de_y = blocks*iprof_y<(npr_y-1)
-                    hasta_y = (blocks*(iprof_y+1)-1)<(npr_y-1)     
+                    hasta_y = (blocks*(iprof_y+1)-1)<(npr_y-1)
 
 		toop_x = (blocks*(iprof_x+1)-1)<(npr_x-1) - blocks*iprof_x
 		toop_y = (blocks*(iprof_y+1)-1)<(npr_y-1) - blocks*iprof_y
-	               ely = Block_data(de_x:hasta_x,de_y:hasta_y,*,*)    
+	               ely = Block_data(de_x:hasta_x,de_y:hasta_y,*,*)
             ;en caso de que el muestreo sea diferente, este entra en muestreo
 			if muestreo NE !NULL then begin
         	     y = fltarr(toop_x+1 , toop_y+1,landas,4)
-        	    for ii = 0, n_landas-1 do y(*,*,muestreo(ii),*) = ely(*,*,ii,*)   
+        	    for ii = 0, n_landas-1 do y(*,*,muestreo(ii),*) = ely(*,*,ii,*)
            	 endif else y = ely
             if keyword_set(slight) then begin
             	if not(keyword_set(mlocal)) then begin
                 	(*bridges[ipar])->SetVar, "slight", slight
             	endif else begin
-                	slight_block = slight(blocks*iprof_x:(blocks*(iprof_x+1)-1)<(npr_x-1), blocks*iprof_y:(blocks*(iprof_y+1)-1)<(npr_y-1),*,*)    
+                	slight_block = slight(blocks*iprof_x:(blocks*(iprof_x+1)-1)<(npr_x-1), blocks*iprof_y:(blocks*(iprof_y+1)-1)<(npr_y-1),*,*)
                 	(*bridges[ipar])->SetVar, "slight", slight_block
                 	(*bridges[ipar])->SetVar, "mlocal", mlocal
                 endelse
             endif
             (*bridges[ipar])->SetVar, "y", y
-            (*bridges[ipar])->SetVar, "iprof_x", iprof_x ;x block id 
-            (*bridges[ipar])->SetVar, "iprof_y", iprof_y ;y block id 
+            (*bridges[ipar])->SetVar, "iprof_x", iprof_x ;x block id
+            (*bridges[ipar])->SetVar, "iprof_y", iprof_y ;y block id
             (*bridges[ipar])->Execute, 'milos_int_v5,Y,VARS,final_model,yfited,Err,chisqr,slight=slight,mlocal=mlocal',/nowait
 ;            (*bridges[ipar])->Execute, 'milos_int_v5,Y,VARS,final_model,yfited,Err,chisqr',/nowait
 
@@ -430,7 +430,7 @@ endwhile ;END MAIL LOOP
 message,/info, "Parallel computation done!"
 message,/info, " Destroying bridges........."
 wait,10
-for ipar=0L,nbparallel-1 do print,(*bridges[ipar])->status() 
+for ipar=0L,nbparallel-1 do print,(*bridges[ipar])->status()
 
 if not(keyword_set(sav_file)) then begin
 message,/info, " saving results in results.save"
@@ -453,7 +453,7 @@ save,filename=sav_file+'_perfiles.save',final_fit,axis,wt
 endelse
 
 for ipar=0L,nbparallel-1 do begin
-    stat = (*bridges[ipar])->status() 
+    stat = (*bridges[ipar])->status()
     if stat eq 0 then obj_destroy, (*bridges[ipar]) else print,ipar,' thread not destroyed'
     print, " .... Bridge ",ipar,' destroyed...'
     wait,5
@@ -475,19 +475,19 @@ ENDIF ELSE BEGIN
             de_x = blocks*iprof_x<(npr_x-1)
             hasta_x = (blocks*(iprof_x+1)-1)<(npr_x-1)
             de_y = blocks*iprof_y<(npr_y-1)
-            hasta_y = (blocks*(iprof_y+1)-1)<(npr_y-1)     
+            hasta_y = (blocks*(iprof_y+1)-1)<(npr_y-1)
 
             toop_x = (blocks*(iprof_x+1)-1)<(npr_x-1) - blocks*iprof_x
             toop_y = (blocks*(iprof_y+1)-1)<(npr_y-1) - blocks*iprof_y
-	        ely = Block_data(de_x:hasta_x,de_y:hasta_y,*,*)    
+	        ely = Block_data(de_x:hasta_x,de_y:hasta_y,*,*)
             ;en caso de que el muestreo sea diferente, este entra en muestreo
 			if muestreo NE !NULL then begin
         	     y = fltarr(toop_x+1 , toop_y+1,landas,4)
-        	    for ii = 0, n_landas-1 do y(*,*,muestreo(ii),*) = ely(*,*,ii,*)   
+        	    for ii = 0, n_landas-1 do y(*,*,muestreo(ii),*) = ely(*,*,ii,*)
            	 endif else y = ely
-           	 
+
             if keyword_set(slight) then begin
-                	slight_block = slight(blocks*iprof_x:(blocks*(iprof_x+1)-1)<(npr_x-1), blocks*iprof_y:(blocks*(iprof_y+1)-1)<(npr_y-1),*,*)    
+                	slight_block = slight(blocks*iprof_x:(blocks*(iprof_x+1)-1)<(npr_x-1), blocks*iprof_y:(blocks*(iprof_y+1)-1)<(npr_y-1),*,*)
             endif
 
             ;milos_int_v5, wl, axis, init_model, fmodel, y, chisqr=chisqr,$
@@ -520,7 +520,7 @@ save,filename=sav_file+'.save',Block_data,final_model,errors,final_chisqr ;sin m
 save,filename=sav_file+'_perfiles.save',final_fit,axis,wt
 endelse
 
-endwhile 
+endwhile
 
 
 ENDELSE

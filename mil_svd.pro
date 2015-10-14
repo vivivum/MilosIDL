@@ -67,21 +67,21 @@ ejecuta = CALL_EXTERNAL('mil_svd_c.so', 'mil_svd_c', d1,d2,I,D3, /CDECL)
 ;print,'d3: ',D3
 ;print,'d3 (reverse): ',D3[REVERSE(SORT(D3))]
 
-goto,noc
+DELTA(0:R-2) = D3
+
+;goto,noc
 
   SVDC,H,W,U,V,/double  ;SVD decomposition
   zz=dblarr(r,r)
   For j=0,r-1 do begin
     zz(j,j) = (abs(w(j)) GT EPSILON*TOP) ? 1D0/w(j) : 0D0
   endfor
-  DELTA=(V##ZZ##TRANSPOSE(U))#BETA ;INVERSE MATRIX and DELTA
+  DELTA_SVD=(V##ZZ##TRANSPOSE(U))#BETA ;INVERSE MATRIX and DELTA
 
-  print,'DD: ',DELTA[0:R-2]-D3[REVERSE(SORT(D3))]
-  print,'DELTA: ',DELTA[0:R-2]
-  print,'d3: ',D3
+  print,'DELTA_SVD: ',DELTA_SVD[0:R-2]
+  print,'DELTA_CORDIC: ',DELTA
 noc:
 
-DELTA(0:R-2) = D3
 
 endif else begin
 

@@ -610,7 +610,7 @@ fm=fltarr(1000,11,2)
 err=fltarr(1000,11)
 
 start = SYSTIME(/SECONDS)
-for i=0,999 do begin
+for i=0,99 do begin
 
     init_syn(1)=b(i)
     init_syn(2)=v(i)
@@ -637,7 +637,7 @@ elapsed_time = SYSTIME(/SECONDS) - start
 print,elapsed_time
 
 start = SYSTIME(/SECONDS)
-for i=0,999 do begin
+for i=0,99 do begin
 
     init_syn(1)=b(i)
     init_syn(2)=v(i)
