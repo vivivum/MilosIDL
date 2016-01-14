@@ -248,14 +248,14 @@ For IL=0,Lines-1 do begin
 	        dF_a=dH_u/2D0
 
 			;Absortion and dispersion profiles derivatives
-    	    DFI(*,1,0)=DFI(*,1,0)+C_N(IL).wep(i)*dH_u*(-wl(IL+1))/(vlight*LD)
-	        DSHI(*,1,0)=DSHI(*,1,0)+C_N(IL).wep(i)*dF_u*(-wl(IL+1))/(vlight*LD)
+          DFI(*,1,0)=DFI(*,1,0)+C_N(IL).wep(i)*dH_u*(-wl(IL+1))/(vlight*LD)
+          DSHI(*,1,0)=DSHI(*,1,0)+C_N(IL).wep(i)*dF_u*(-wl(IL+1))/(vlight*LD)
     	    DFI(*,3,0)=DFI(*,3,0)+C_N(IL).wep(i)*dH_a
 	        DSHI(*,3,0)=DSHI(*,3,0)+C_N(IL).wep(i)*dF_a
     	    DFI(*,0,0)=DFI(*,0,0)+C_N(IL).wep(i)*dH_u*(-NUPB(i))
 	        DSHI(*,0,0)=DSHI(*,0,0)+C_N(IL).wep(i)*dF_u*(-NUPB(i))
     	    DFI(*,2,0)=DFI(*,2,0)+C_N(IL).wep(i)*(dH_u*(-UU/LD))
-	        DSHI(*,2,0)=DSHI(*,2,0)+C_N(IL).wep(i)*(dF_u*(-UU/LD))
+	        DSHI(*,2,0)=DSHI(*,2,0)+C_N(IL).wep(i)*(dF_u*(-UU/LD))  ;B,U,LD,A
 
 	    ENDFOR
    		SHI_P=2d0*SHI_P

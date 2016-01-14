@@ -1,20 +1,20 @@
 ;+
-; NAME: 
+; NAME:
 ;	FVOIGT
 ;
-; AUTHOR: 
-;	D. Orozco Suarez  	
-;						National Astronomical Observatory of Japan,Ê
+; AUTHOR:
+;	D. Orozco Suarez
+;						National Astronomical Observatory of Japan,ï¿½
 ;						2-21-1 Osawa, Mitaka, 181-8588, JAPAN
 ;						d.orozco@nao.ac.jp
 ;
-;	J.C. del Toro Iniesta  
+;	J.C. del Toro Iniesta
 ;						Instituto de Astrofisica de Andalucia (CSIC)
-;						Apdo de Correos 3004, 18080 Granada, SPAIN 
+;						Apdo de Correos 3004, 18080 Granada, SPAIN
 ;						jti@iaa.es
 ;
-; PURPOSE: It calculates the Voigt and Faraday-Voigt functions for a given 
-;          damping parameter and at given wavelengths 
+; PURPOSE: It calculates the Voigt and Faraday-Voigt functions for a given
+;          damping parameter and at given wavelengths
 ;
 ; CATEGORY: Spectropolarimetric fitting
 ;
@@ -22,7 +22,7 @@
 ;
 ; INPUTS:
 ;           DAMP: A scalar with the damping parameter
-;           VV: Wavelength axis usually in Doppler units. Just one for 
+;           VV: Wavelength axis usually in Doppler units. Just one for
 ;               all the lines in the sample. It should be a double precision array
 ;
 ; KEYWORD PARAMETERS:
@@ -31,20 +31,20 @@
 ;           H: Voigt function
 ;           F: Faraday-Voigt function
 ;
-; COMMON BLOCKS: 
+; COMMON BLOCKS:
 ;
 ; NOTES:
 ;           A rational approximation to the complex error function is used
-;           after Hui, Armstrong, and Wray(1978, JQSRT 19, 509). H and F are 
+;           after Hui, Armstrong, and Wray(1978, JQSRT 19, 509). H and F are
 ;           the real and imaginary parts of such function, respectively.
-;           The procedure is inspired on that in SIR (Ruiz Cobo & del Toro 
+;           The procedure is inspired on that in SIR (Ruiz Cobo & del Toro
 ;           Iniesta 1992, ApJ 398, 385). On its turn, that routine was taken
 ;           from modifications by A. Wittmann (1986) to modifications by S.K.
 ;           Solanki (1985) to an original FORTRAN routine written by J.W. Harvey
 ;           and A. Nordlund.
 ;
 ;           The result is exactly the same as in SIR when the damping is not
-;           zero (a non realistic case in which the line would be purely Gaussian) 
+;           zero (a non realistic case in which the line would be purely Gaussian)
 ;
 ; CALLED ROUTINES
 ;
@@ -68,9 +68,8 @@ pro fvoigt,DAMP,VV,H,F
 
   Z=((((((A(6)*Z+A(5))*Z+A(4))*Z+A(3))*Z+A(2))*Z+A(1))*Z+A(0))/$
           (((((((Z+B(6))*Z+B(5))*Z+B(4))*Z+B(3))*Z+B(2))*Z+B(1))*Z+B(0))
-          
+
 	h=double(z)
-	f=sign(vv)*imaginary(z)*0.5
+	f=sign(vv)*imaginary(z)*0.5d0
 
 end
-

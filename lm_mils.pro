@@ -370,6 +370,8 @@ endif
 
     flambda=flambda*10d0
 
+    IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
+
       ;RNOISE_PROBLEM
       IF FLAMBDA LT 1 THEN BEGIN
       II = 1d0
@@ -405,7 +407,7 @@ endif
     ITER=ITER+1
 
 
-  ENDREP UNTIL (ITER GT MITER)
+  ENDREP UNTIL (ITER GT MITER) OR (CLANDA EQ 1)
 
 	iter_info.iter = ITER
 	iter_info.citer = goodc

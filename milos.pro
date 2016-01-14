@@ -417,7 +417,7 @@ if keyword_set(VARLIMITS) then begin
 		print,' '
 		return
 	endif
-	check_size = Size(PARLIMITS)
+	check_size = Size(VARLIMITS) ;FIXED Bug PARLIMITS -> VARLIMITS (24-Oct-2015)
 	If check_size(0) eq 1 then Howmany = 1 else Howmany = check_size(2)
 	FOR i=0, howmany -1 do begin
 		VLIMITS[VARLIMITS(0,i)].LIMITS = [ VARLIMITS(2,i) ,  VARLIMITS(3,i) ]

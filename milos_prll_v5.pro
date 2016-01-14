@@ -3,7 +3,11 @@ pro MILOS_prll_v5,THREADS=threads,Block_data=block_data,xrange=xrange,yrange=yra
                   badpixel=badpixel,simple=simple,max_iter=max_iter,init_lambda=init_lambda,$
                   not_normalize=not_normalize,waxis = waxis,INITIAL_MODEL=INITIAL_MODEL,IMAX_SAVE=imax_save,$
                   filter_width=filter_width,weights=weights,fix=fix,sigma=sigma,icontlimit=icontlimit,line=line,muestreo=muestreo,$
-                  slight=slight,mlocal=mlocal,ipbs=ipbs,n_components=n_components
+                  slight=slight,mlocal=mlocal,ipbs=ipbs,n_components=n_components,doplot=doplot
+
+;TODO add ,ipbs=ipbs,n_components=n_components OPTIONS to parallel version
+;TODO correct 63016302 options (var. def in wl
+;TODO include AC_ratio
 
 ;Block_data = variable containing the data [X, Y, Wavelengths, Stokes profiles], or a save file (ending in .sav)
 ;line = spectral line (see milos)
@@ -160,17 +164,24 @@ wt = fltarr(landas,4)
 if not(keyword_set(weights)) then begin
 if muestreo NE !NULL then begin
 	wt(muestreo,0) = 1.0
-	wt(muestreo,1) = 1.0
-	wt(muestreo,2) = 1.0
-	wt(muestreo,3) = 1.0
+	wt(muestreo,1) = 4.0
+	wt(muestreo,2) = 4.0
+	wt(muestreo,3) = 2.0
 endif else begin
 	wt(*,0) = 1.0
 	wt(*,1) = 4.0
 	wt(*,2) = 4.0
 	wt(*,3) = 2.0
 endelse
-endif else wt = weights
-
+endif else begin
+  nel = n_elements(weights)
+  if nel eq 4 then begin
+    wt[*,0] = weights[0]
+    wt[*,1] = weights[1]
+    wt[*,2] = weights[2]
+    wt[*,3] = weights[3]
+  endif else wt = weights
+endelse
 if not(keyword_set(INITIAL_MODEL)) then begin
 
 ;initial model
@@ -493,6 +504,7 @@ ENDIF ELSE BEGIN
             ;milos_int_v5, wl, axis, init_model, fmodel, y, chisqr=chisqr,$
             ;  yfited=yfited,sigma=sigma,fix=fix,ilambda=ilambda,miter=miter,Err=Err,$
             ;  filter=filter,weight=wt,badpixel=badpixel,simple=simple
+
             milos_int_v5,Y,VARS,fmodel,yfited,Err,chisqr,slight=slight_block,mlocal=mlocal,/doplot
             print,'Task finished.',' Block ',$
               strtrim(string(iprof_x+iprof_y*nblock_x+1),2),$
@@ -512,12 +524,12 @@ ENDIF ELSE BEGIN
 
 if not(keyword_set(sav_file)) then begin
 message,/info, " saving results in results.save"
-save,filename='results.save',Block_data,final_model,errors,final_chisqr ;sin macro a fijo, New CI, constraits
-save,filename='results_perfiles.save',final_fit,axis,wt
+save,filename='results.save',Block_data,final_model,errors,final_chisqr,axis,wt ;sin macro a fijo, New CI, constraits
+;save,filename='results_perfiles.save',final_fit,axis,wt
     endif else begin
 message,/info, " saving results in "+sav_file
-save,filename=sav_file+'.save',Block_data,final_model,errors,final_chisqr ;sin macro a fijo, New CI, constraits
-save,filename=sav_file+'_perfiles.save',final_fit,axis,wt
+save,filename=sav_file+'.save',Block_data,final_model,errors,final_chisqr,axis,wt ;sin macro a fijo, New CI, constraits
+;save,filename=sav_file+'_perfiles.save',final_fit,axis,wt
 endelse
 
 endwhile
