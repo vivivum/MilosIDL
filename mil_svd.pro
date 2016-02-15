@@ -30,7 +30,7 @@
 ;
 ; MODIFICATION HISTORY:
 ; 	Added documentation: David Orozco Suarez, Feb 2009
-;
+;   Added SVD cordic in 2015 by David Orozco (Experimental).
 ;-
 
 PRO MIL_SVD,H,BETA,DELTA,W,use_svd_cordic = use_svd_cordic

@@ -83,7 +83,7 @@ INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
 init_milos,'5250.6',wl
 
 ;wavelength axis
-Init_landa=Wl(1)-0.5
+Init_landa=Wl(1)-0.4
 step=5d0
 Points=150.
 STEP=STEP/1000d0
@@ -102,20 +102,20 @@ eta0=6d0
 Magnet=100.
 GAMMA=90.
 AZI=60.
-vlos=2.25  ;km/s
-MACRO=1.8
+vlos=0.25  ;km/s
+MACRO=2.5
 LANDADOPP=0.01
 aa=0.03
 alfa=0.
 INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
 
-fix=[1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,0.]
-weight=[1.,1.,1.,1.]
+fix=[1.,1.,1.,1.,1.,1.,1.,1.,1.,0.,0.]
+weight=[1.,10.,10.,1.]
 
 
 INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
 milos, wl, axis, init_model, y, yfit=yfit,$
-  fix=fix,/inversion,miter=100,noise=1.d-6,/doplot
+  fix=fix,/inversion,miter=100,noise=1.d-3,/doplot,ilambda=10.,toplim=1e-25
 
 Print,'Old model:' , OLD
 Print,'New model:' , init_model
@@ -163,6 +163,7 @@ fm=fltarr(1000,11)
 err=fltarr(1000,11)
 
 start = SYSTIME(/SECONDS)
+gg = 0
 for i=0,999 do begin
 
     init_syn(1)=b(i)
@@ -205,6 +206,7 @@ print,'------------------------------------------------------------------------'
 print,'Numer of points which the program did not converge: ',nl/1000.*100., ' %'
 print,'------------------------------------------------------------------------'
 
+stop
 end
 
 pro test_milos_3,chi

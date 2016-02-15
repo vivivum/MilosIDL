@@ -179,7 +179,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   valid=WHERE(STOKESPROF ne 0.,HAY) ; If Y = 0 then the samples are not valid (e.g. blends)
   nfree=DOUBLE(N_ELEMENTS(VALID)-NFIXSS)  ; Number of degrees of freedom
   npoints=(SIZE(STOKESPROF))(1)
-  iter_info = {lmb:dblarr(miter+1),iter:0,citer:0}
+  iter_info = {lmb:dblarr(miter+1),iter:0,citer:0,conv_crit:dblarr(miter+1),Params_stored:fltarr(nterms,miter+1)}
 
   if NFREE le 0 then begin
 	PRINT,'Not enough points'
@@ -190,7 +190,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   goodc=0
   max_stored=Miter+1
   Params_stored=fltarr(nterms,max_stored)
-
+  conv_crit = intarr(max_stored)
   ;TO BE IMPLEMENTED
   ;   ;INITIALIZATION
   ;   p_i(6)=atan(max(STOKESPROF(*,1))/max(STOKESPROF(*,2)))/2.*180/!dpi
@@ -235,12 +235,11 @@ If keyword_set(mlocal) then begin
 	term1 = 1d0 + (1d0 - p_i(10))^2d0/(mlocal*1d0) ;1-(1-alpha)^2/M
 	sigo = sig
 	sig = sigo*term1 - 2d0*(1d0 - p_i(10))*rho
-	endif
+endif
 
   ;Computes the gradient, the covariance and the initial merit function value
   COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,CHISQR,drho=dhro
-
-
+;  flambda = CHISQR
 ;  flambda = 1.
 ;  Jope = max(alpha(diag))*1.e-8
 ;  if jope gt 1 then cuantos = (n_elements(digits_get(float(Jope)))) else flambda=0.1
@@ -263,6 +262,7 @@ If keyword_set(mlocal) then begin
   ;print,flambda
 
    P_M=P_I
+   yfitt = yfit
 
   ;BEGIND THE ITERATION LOOP FOR THE LM OPTIMIZATION ALGORITHM
 REPEAT BEGIN
@@ -295,7 +295,30 @@ REPEAT BEGIN
 	;new chisqr
     CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
 
+;print,delta
+;TEST!!!!
+goto,notest
+    COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,CHISQRB,drho=dhro
+    COVAR=ALPHA
+    COVAR(DIAG)=COVAR(DIAG)*(1.+FLAMBDA)
+    BETAD=BETA
+    MIL_SVD,COVAR,BETAD,DELTA,LOSW,use_svd_cordic = use_svd_cordic
+    for i=0,11*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
+  	 DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1)
+    P_M(fxx) = P_M(fxx) - DELTA(fxx)
+    CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
+    mil_sinrf,p_m,wli,AXIS,yfit,triplet=triplet,slight=slight,filter=filter,$
+      AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs
+    CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
+notest:
+;TEST!!!!
+;print,delta
+
+      ;****CONVERGENCE CONDITION *****
     IF CHISQR-OCHISQR lt 0. then begin ;;FIT GOT BETTER
+      ;****CONVERGENCE CONDITION *****
+      conv_crit[ITER] = 1
+      iter_info.conv_crit[ITER] = conv_crit[ITER]
 
       if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) OR (CHISQR lt 0.0001) $
         THEN CLANDA = 1 ;Stoping criteria
@@ -314,15 +337,16 @@ REPEAT BEGIN
 ;print, 'fidge', ((pbeta-1)*(2*rho-1)^pp+10)
 ;flambda = flambda / ((pbeta-1)*(2*rho-1)^pp+10) ;*1-(pbeta-1)*(2*rho-1)^pp
 
-
+      ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10
       flambda=flambda/10d0
+
             ;RNOISE_PROBLEM
-      IF FLAMBDA LT 1 THEN BEGIN
-      II = 1d0
-      REPEAT II = II * 10. UNTIL FLAMBDA-ROUND(FLAMBDA*II) LT 0
-      II = II*10d0
-      FLAMBDA = ROUND(FLAMBDA*II)/II
-      ENDIF
+;      IF FLAMBDA LT 1 THEN BEGIN
+;      II = 1d0
+;      REPEAT II = II * 10. UNTIL FLAMBDA-ROUND(FLAMBDA*II) LT 0
+;      II = II*10d0
+;      FLAMBDA = ROUND(FLAMBDA*II)/II
+;      ENDIF
 
       ;flambda=flambda/(10d0);+(OCHISQR-CHISQR)/CHISQR)
       ;      ;SOME DEBUGGING STAFF
@@ -336,49 +360,55 @@ REPEAT BEGIN
 
       ;store new model parameters
       P_I(fxx)=P_M(fxx)
-
+      ;store parameters for studing the evolution of them (opt mode)
       Params_stored(*,goodc) = p_i
+      iter_info.Params_stored[*,ITER] = P_I
+      ;Store the number if iterations that converged (opt mode)
+      goodc = goodc + 1
 
-	  goodc = goodc + 1
 	 ; if (goodc mod 10 eq 0)  then begin
 	 ;  	acc,goodc - 1,fxx,params_stored,pnew
 	 ;  	CHECK_PARAM,Pnew,PLIMITS=plimits
 	 ;   p_i = pnew
 	 ; endif
 
-
+      ;info
       IF not(prt) THEN PRINT,'ITERATION =',ITER,' , CHISQR =',CHISQR,$
         '  CONVERGE - LAMBDA= ',flambda,(OCHISQR-CHISQR)/CHISQR
 
       ;compute new RFs and Stokes profiles
-
-	  me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,$
-      AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs
+      me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,$
+        AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs
       for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 
-If keyword_set(mlocal) then begin
-	drho[0] = 2d0*(1d0 - p_i(10))/(mlocal*1d0)*sig[0] - 2*rho[0]
-	term1 = 1d0 + (1d0 - p_i(10))^2d0/(mlocal*1d0) ;1-(1-alpha)^2/M
-	sig = sigo*term1 - 2d0*(1d0 - p_i(10))*rho
-endif
+      ;Local stray light option (modification of chi2)
+      If keyword_set(mlocal) then begin
+        drho[0] = 2d0*(1d0 - p_i(10))/(mlocal*1d0)*sig[0] - 2*rho[0]
+        term1 = 1d0 + (1d0 - p_i(10))^2d0/(mlocal*1d0) ;1-(1-alpha)^2/M
+        sig = sigo*term1 - 2d0*(1d0 - p_i(10))*rho
+      endif
 
       COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,OCHISQR,drho=dhro
 
-    ENDIF ELSE BEGIN ;FIT GOT WORSE
+      ;****CONVERGENCE CONDITION *****
+    ENDIF ELSE BEGIN ;ASSUMES FIT GOT WORSE
+      ;****CONVERGENCE CONDITION *****
+      conv_crit[ITER] = 0
+      iter_info.conv_crit[ITER] = conv_crit[ITER]
 
       ;increase flambda by a factor 10
 
-    flambda=flambda*10d0
+      flambda=flambda*10d0
 
-    IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
+;    IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
 
       ;RNOISE_PROBLEM
-      IF FLAMBDA LT 1 THEN BEGIN
-      II = 1d0
-      REPEAT II = II * 10. UNTIL FLAMBDA-ROUND(FLAMBDA*II) LT 0
-      II = II*100d0
-      FLAMBDA = ROUND(FLAMBDA*II)/II
-      ENDIF
+;      IF FLAMBDA LT 1 THEN BEGIN
+;      II = 1d0
+;      REPEAT II = II * 10. UNTIL FLAMBDA-ROUND(FLAMBDA*II) LT 0
+;      II = II*100d0
+;      FLAMBDA = ROUND(FLAMBDA*II)/II
+;      ENDIF
 
        ;SOME DEBUGGING STAFF
       ;if flambda le 1.e-3 then begin
@@ -392,22 +422,25 @@ endif
       ;endelse
 
 
+      ;info
       IF not(prt) THEN PRINT,'ITERATION =',ITER,' , CHISQR =',OCHISQR,$
         '  NOT CONVERGE - LAMBDA= ',flambda,(OCHISQR-CHISQR)/CHISQR
+
     ENDELSE
 
 	;Lambda storage to avoid oscillations in lambda, in such a case the inversion is finished
     LANDA_STORE(ITER)=FLAMBDA
-    if (ITER gt 5) $
-    	AND (LANDA_STORE(ITER) eq LANDA_STORE(ITER-2)) $
-    	AND (LANDA_STORE(ITER-1) eq LANDA_STORE(ITER-3)) then begin
-		flambda=flambda * 10d0
+
+    if (ITER gt 5) then begin
+      if (conv_crit(ITER) eq conv_crit(ITER-2)) $
+        AND (conv_crit(ITER-1) eq conv_crit(ITER-3)) $
+        AND (conv_crit(ITER) ne conv_crit(ITER-1))then $
+        flambda = flambda + flambda*1d-1
     endif
 
     ITER=ITER+1
 
-
-  ENDREP UNTIL (ITER GT MITER) OR (CLANDA EQ 1)
+ENDREP UNTIL (ITER GT MITER) OR (CLANDA EQ 1)
 
 	iter_info.iter = ITER
 	iter_info.citer = goodc
