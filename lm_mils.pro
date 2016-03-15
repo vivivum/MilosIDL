@@ -395,6 +395,7 @@ notest:
       ;****CONVERGENCE CONDITION *****
       conv_crit[ITER] = 0
       iter_info.conv_crit[ITER] = conv_crit[ITER]
+      iter_info.Params_stored[*,ITER] = P_I
 
       ;increase flambda by a factor 10
 
