@@ -66,6 +66,8 @@ PRO  CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
   endif
   ;Inclination
   If PLIMITS(5).SET EQ 1 THEN BEGIN
+
+while (P_M(5) LT PLIMITS[5].LIMITS(0)) OR (P_M(5) GT PLIMITS[5].LIMITS(1)) do begin
   If P_M(5) LT PLIMITS[5].LIMITS(0)  THEN begin
     P_M(5) = -P_M(5)
 ;    ch(5)=1
@@ -74,10 +76,14 @@ PRO  CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
     P_M(5) = 360d0-P_M(5)
 ;    ch(5)=1
   endif
+endwhile
+
   ENDIF
 
   ;azimuth
   If PLIMITS(6).SET EQ 1 THEN BEGIN
+    while (P_M(6) LT PLIMITS[6].LIMITS(0)) OR (P_M(6) GT PLIMITS[6].LIMITS(1)) do begin
+
   If P_M(6) LT 0. THEN  begin
     P_M(6) = 180d0 + P_M(6)
 ;    ch(6)=1
@@ -86,6 +92,8 @@ PRO  CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
     P_M(6) = P_M(6) - 180d0
 ;    ch(6)=1
   endif
+endwhile
+
   ENDIF
 
   for i=0,4 do IF PLIMITS(i).SET EQ 1 THEN $

@@ -248,18 +248,18 @@ For IL=0,Lines-1 do begin
 	        dF_a=dH_u/2D0
 
 			;Absortion and dispersion profiles derivatives
-          DFI(*,1,0)=DFI(*,1,0)+C_N(IL).wep(i)*dH_u*(-wl(IL+1))/(vlight*LD)
-          DSHI(*,1,0)=DSHI(*,1,0)+C_N(IL).wep(i)*dF_u*(-wl(IL+1))/(vlight*LD)
+          DFI(*,1,0)=DFI(*,1,0)+C_N(IL).wep(i)*dH_u*(-wl(IL+1))/(vlight*LD)  ;VLOS
+          DSHI(*,1,0)=DSHI(*,1,0)+C_N(IL).wep(i)*dF_u*(-wl(IL+1))/(vlight*LD) ;VLOS
     	    DFI(*,3,0)=DFI(*,3,0)+C_N(IL).wep(i)*dH_a
 	        DSHI(*,3,0)=DSHI(*,3,0)+C_N(IL).wep(i)*dF_a
-    	    DFI(*,0,0)=DFI(*,0,0)+C_N(IL).wep(i)*dH_u*(-NUPB(i))
-	        DSHI(*,0,0)=DSHI(*,0,0)+C_N(IL).wep(i)*dF_u*(-NUPB(i))
-    	    DFI(*,2,0)=DFI(*,2,0)+C_N(IL).wep(i)*(dH_u*(-UU/LD))
-	        DSHI(*,2,0)=DSHI(*,2,0)+C_N(IL).wep(i)*(dF_u*(-UU/LD))  ;B,U,LD,A
+    	    DFI(*,0,0)=DFI(*,0,0)+C_N(IL).wep(i)*dH_u*(-NUPB(i))  ;B
+	        DSHI(*,0,0)=DSHI(*,0,0)+C_N(IL).wep(i)*dF_u*(-NUPB(i))  ;B
+    	    DFI(*,2,0)=DFI(*,2,0)+C_N(IL).wep(i)*(dH_u*(-UU/LD));(-UU/LD))
+	        DSHI(*,2,0)=DSHI(*,2,0)+C_N(IL).wep(i)*(dF_u*(-UU/LD));(-UU/LD))  ;B,U,LD,A
 
 	    ENDFOR
    		SHI_P=2d0*SHI_P
-
+      DSHI(*,*,0)=2d0*DSHI(*,*,0)
         ; SIGMA BLUE COMPONENTS
 
 	    FOR i=0,C_N(IL).N_SIG-1 DO BEGIN
@@ -288,6 +288,7 @@ For IL=0,Lines-1 do begin
 
 	    ENDFOR
 	    SHI_B=2d0*SHI_B
+      DSHI(*,*,1)=2d0*DSHI(*,*,1)
 
         ; SIGMA RED COMPONENTS
 
@@ -316,6 +317,7 @@ For IL=0,Lines-1 do begin
 	        DSHI(*,2,2)=DSHI(*,2,2)+C_N(IL).wer(i)*(dF_u*(-UU/LD))
 	    ENDFOR
 	    SHI_R=2d0*SHI_R
+      DSHI(*,*,2)=2d0*DSHI(*,*,2)
 
 	ENDIF ELSE BEGIN
 
@@ -330,18 +332,18 @@ For IL=0,Lines-1 do begin
 	    SHI_P=2d0*SHI_P
 
 	    dH_u=4D0*A*F-2D0*(U-ULOS)*H
-	    dF_u=RR-A*H-2D0*(U-ULOS)*F
+      dF_u=RR-A*H-2D0*(U-ULOS)*F
 	    dH_a=-2D0*dF_u
 	    dF_a=dH_u/2D0
 
 	    DFI(*,1,0)=dH_u*(-wl(IL+1))/(vlight*LD)
 	    DFI(*,3,0)=dH_a ;A
-	    DSHI(*,1,0)=dF_u*(-wl(IL+1))/(vlight*LD)
-	    DSHI(*,3,0)=dF_a ;A
+	    DSHI(*,1,0)=2d0*dF_u*(-wl(IL+1))/(vlight*LD)
+	    DSHI(*,3,0)=2d0*dF_a ;A
 	    DFI(*,0,0)=0. ;B
 	    DSHI(*,0,0)=0. ;B
 	    DFI(*,2,0)=(dh_u*(-(U-ULOS)/LD)) ;LD
-	    DSHI(*,2,0)=(df_u*(-(U-ULOS)/LD)) ;LD
+	    DSHI(*,2,0)=2d0*(df_u*(-(U-ULOS)/LD)) ;LD
 
         ; SIGMA BLUE COMPONENT
 
@@ -356,12 +358,12 @@ For IL=0,Lines-1 do begin
 
 	    DFI(*,1,1)=dH_u*(-wl(IL+1))/(vlight*LD)
 	    DFI(*,3,1)=dH_a ;A
-	    DSHI(*,1,1)=dF_u*(-wl(IL+1))/(vlight*LD)
-	    DSHI(*,3,1)=dF_a ;A
+	    DSHI(*,1,1)=2d0*dF_u*(-wl(IL+1))/(vlight*LD)
+	    DSHI(*,3,1)=2d0*dF_a ;A
 	    DFI(*,0,1)=dh_u*(SHIF) ;B
-	    DSHI(*,0,1)=df_u*(SHIF) ;B
+	    DSHI(*,0,1)=2d0*df_u*(SHIF) ;B
 	    DFI(*,2,1)=(dh_u*(-(U-ULOS+SHIF*MF)/LD)) ;LD
-	    DSHI(*,2,1)=(df_u*(-(U-ULOS+SHIF*MF)/LD)) ;LD
+	    DSHI(*,2,1)=2d0*(df_u*(-(U-ULOS+SHIF*MF)/LD)) ;LD
 
         ; SIGMA RED COMPONENT
 
@@ -374,14 +376,14 @@ For IL=0,Lines-1 do begin
 	    dH_a=-2D0*dF_u
 	    dF_a=dH_u/2D0
 
+      DFI(*,0,2)=dh_u*(-SHIF) ;B
+	    DSHI(*,0,2)=2d0*df_u*(-SHIF) ;B
 	    DFI(*,1,2)=dH_u*(-wl(IL+1))/(vlight*LD)
+      DSHI(*,1,2)=2d0*dF_u*(-wl(IL+1))/(vlight*LD)
+      DFI(*,2,2)=(dh_u*(-(U-ULOS-SHIF*MF)/LD)) ;LD
+	    DSHI(*,2,2)=2d0*(df_u*(-(U-ULOS-SHIF*MF)/LD)) ;LD
 	    DFI(*,3,2)=dH_a ;A
-	    DSHI(*,1,2)=dF_u*(-wl(IL+1))/(vlight*LD)
-	    DSHI(*,3,2)=dF_a ;A
-	    DFI(*,0,2)=dh_u*(-SHIF) ;B
-	    DSHI(*,0,2)=df_u*(-SHIF) ;B
-	    DFI(*,2,2)=(dh_u*(-(U-ULOS-SHIF*MF)/LD)) ;LD
-	    DSHI(*,2,2)=(df_u*(-(U-ULOS-SHIF*MF)/LD)) ;LD
+	    DSHI(*,3,2)=2d0*dF_a ;A
 
 ENDELSE
 

@@ -368,7 +368,7 @@ endif
 	PLIMITS[index+3].LIMITS = [1d-4,6d-1]  ; Doppler width
 	PLIMITS[index+4].LIMITS = [1d-4,1d1]  ; Damping
 	PLIMITS[index+5].LIMITS = [0d0,180d0]  ; Inclination
-	PLIMITS[index+6].LIMITS = [0d0,180d0]  ; Azimuth
+	PLIMITS[index+6].LIMITS = [0d0,360d0]  ; Azimuth
 	PLIMITS[index+7].LIMITS = [1d-4,1d1]  ; S0
 	PLIMITS[index+8].LIMITS = [1d-4,1d1]  ; S1
 	PLIMITS[index+9].LIMITS = [0d0,4d0]  ; Macroturbulence
@@ -397,11 +397,11 @@ ENDIF
 
     VLIMITS = replicate( {set:0, limits:[0d0,0d0]} , 11* n_comp) ;define variable vlimits
     VLIMITS[index+1].SET = 1
-    VLIMITS[index+1].LIMITS = [-300d0,300d0]
+    VLIMITS[index+1].LIMITS = [-1000d0,1000d0]
     VLIMITS[index+5].SET = 1
-    VLIMITS[index+5].LIMITS = [-30d0,30d0]
+    VLIMITS[index+5].LIMITS = [-90d0,90d0]
     VLIMITS[index+6].SET = 1
-    VLIMITS[index+6].LIMITS = [-30d0,30d0]
+    VLIMITS[index+6].LIMITS = [-90d0,90d0]
     VLIMITS[index+9].SET = 1
     VLIMITS[index+9].LIMITS = [0d0,4d0] ;MACRO
 

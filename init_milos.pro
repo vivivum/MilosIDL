@@ -164,7 +164,7 @@ print,'### Fe 5250.6 ###'
             END
 '6173': BEGIN
 print,'### Fe 6173.3 ###'
-           WL=6173.3356d0
+           WL = 6173.3500 ; C_MILOS 6173.3356d0
            slo=2 & llo=1 & jlo=1
            sup=2 & lup=2 & jup=0
            DATA=[1.,slo,llo,jlo,sup,lup,jup]

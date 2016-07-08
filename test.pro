@@ -654,7 +654,7 @@ for i=0,99 do begin
 
     milos, wl, eje, init_model, y, chisqr=chisqr,yfit=yfit,$
       sigma=sigma,fix=fix,/inversion,miter=100,/quiet,/doplot,Err=rr,$
-      iter_info = iter_info,/use_svd_cordic
+      iter_info = iter_info,use_svd_cordic=2
 	fm(i,*,1)=init_model
 	err(i,*)=rr
 	;wait,0.01

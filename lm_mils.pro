@@ -281,7 +281,7 @@ REPEAT BEGIN
 	;CHECK MAX VARIATION OF DELTA AND SET NEW MODEL P_M
 
     for i=0,11*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
-	DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1)
+	  DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1)
 
     P_M(fxx) = P_I(fxx) - DELTA(fxx) ;NEW PARAMS
 
@@ -317,6 +317,7 @@ notest:
       ;****CONVERGENCE CONDITION *****
     IF CHISQR-OCHISQR lt 0. then begin ;;FIT GOT BETTER
       ;****CONVERGENCE CONDITION *****
+
       conv_crit[ITER] = 1
       iter_info.conv_crit[ITER] = conv_crit[ITER]
 
@@ -390,9 +391,11 @@ notest:
 
       COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,OCHISQR,drho=dhro
 
+
       ;****CONVERGENCE CONDITION *****
     ENDIF ELSE BEGIN ;ASSUMES FIT GOT WORSE
       ;****CONVERGENCE CONDITION *****
+
       conv_crit[ITER] = 0
       iter_info.conv_crit[ITER] = conv_crit[ITER]
       iter_info.Params_stored[*,ITER] = P_I
@@ -440,6 +443,9 @@ notest:
     endif
 
     ITER=ITER+1
+;    IF flambda lt 1e-5 then flambda = 10.
+;    IF flambda gt 1e5 then flambda = 0.001
+
 
 ENDREP UNTIL (ITER GT MITER) OR (CLANDA EQ 1)
 
