@@ -36,7 +36,7 @@
 PRO MIL_SVD,H,BETA,DELTA,W,use_svd_cordic = use_svd_cordic
 
   R=(SIZE(H))(1)
-  EPSILON=1d-188  ;threshold to reject small eigenvalues (very small, this is usefull in other situations)
+  EPSILON=1D-40  ;threshold to reject small eigenvalues (very small, this is usefull in other situations)
   TOP=1d0
   cual=where(finite(h) eq 0,hay)
   if hay gt 0 then h(cual)=0.
@@ -85,6 +85,7 @@ noc:
 
 endif else begin
 
+  ;LA_SVD,H,W,U,V,/double  ;SVD decomposition
   SVDC,H,W,U,V,/double  ;SVD decomposition
   zz=dblarr(r,r)
   For j=0,r-1 do begin

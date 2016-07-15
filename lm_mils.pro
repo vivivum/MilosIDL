@@ -155,42 +155,46 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
 	PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
 	N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
-  ipbs=ipbs
+  ipbs=ipbs,varfix = varfix
 
 ; Enviromental parameters
-  prt=keyword_set(QUIET)
+  prt = keyword_set(QUIET)
   if not(keyword_set(miter)) then miter=50  ; Maximum number of iterations
-  if not(keyword_set(ilambda)) then ilambda=0.1d0;0.1d0 ; Assumes close to global minimum
-  if not(keyword_set(toplim)) then toplim=1d-12 ; Very low, It may stop by MITER
+  if not(keyword_set(ilambda)) then ilambda=0.1D;0.1d0 ; Assumes close to global minimum
+  if not(keyword_set(toplim)) then toplim=1D-12 ; Very low, It may stop by MITER
 ;  if not(keyword_set(slight)) then print,'No stray light';slight=0 ; No stray light
 ;  if not(keyword_set(filter)) then print,'No inst. filter profile'
   if not(prt) then print,'triplet='+string(keyword_set(triplet))
   if not(prt) then print,'Iterations='+string(miter)
-  if not(keyword_set(noise)) then noise=1d-3 ; Default noise level
-  if not(keyword_set(n_comp)) then n_comp=1d0  ; Maximum number of iterations
+  if not(keyword_set(noise)) then noise=1D-3 ; Default noise level
+  if not(keyword_set(n_comp)) then n_comp=1D  ; Maximum number of iterations
+  if not(keyword_set(varfix)) then varfix=0  ; Maximum number of iterations
 ;  n_comp = n_comp*1.
 
-  nterms = N_ELEMENTS(P_I)*1d0
-  NFIXSS = total(fix)
-  flambda=ILAMBDA   ; Initial fudge parameter
+  NTERMS = N_ELEMENTS(P_I)*1D
+  NFIXSS = TOTAL(FIX)
+  FLAMBDA = ILAMBDA   ; Initial fudge parameter
   DIAG = INDGEN(NTERMS)*(NTERMS+1) ;SUBSCRIPTS OF DIAGONAL ELEMENTS
-  FIXED=FIX*1d0
-  NAXIS=N_ELEMENTS(AXIS)
-  valid=WHERE(STOKESPROF ne 0.,HAY) ; If Y = 0 then the samples are not valid (e.g. blends)
-  nfree=DOUBLE(N_ELEMENTS(VALID)-NFIXSS)  ; Number of degrees of freedom
-  npoints=(SIZE(STOKESPROF))(1)
-  iter_info = {lmb:dblarr(miter+1),iter:0,citer:0,conv_crit:dblarr(miter+1),Params_stored:fltarr(nterms,miter+1)}
+  FIXED = FIX*1D
+  NAXIS = N_ELEMENTS(AXIS)
+  VALID = WHERE(STOKESPROF ne 0.,HAY) ; If Y = 0 then the samples are not valid (e.g. blends)
+  NFREE = (N_ELEMENTS(VALID)-NFIXSS)*1D  ; Number of degrees of freedom
+  NPOINTS = (SIZE(STOKESPROF))(1)
+
+  ITER_INFO = {lmb:dblarr(miter+1),lmb_new:dblarr(miter+1),iter:0,citer:0,conv_crit:dblarr(miter+1),$
+               Params_stored:dblarr(nterms,miter+1)}
 
   if NFREE le 0 then begin
-	PRINT,'Not enough points'
-	return
+	     PRINT,'Not enough points'
+       RETURN
   endif
-  P_M=DBLARR(NTERMS) ;New model aprameters
+  P_M = DBLARR(NTERMS) ;New model aprameters
 
-  goodc=0
-  max_stored=Miter+1
-  Params_stored=fltarr(nterms,max_stored)
-  conv_crit = intarr(max_stored)
+  goodc = 0
+  max_stored = Miter+1
+  Params_stored = DBLARR(nterms,max_stored)
+  conv_crit = INTARR(max_stored)
+
   ;TO BE IMPLEMENTED
   ;   ;INITIALIZATION
   ;   p_i(6)=atan(max(STOKESPROF(*,1))/max(STOKESPROF(*,2)))/2.*180/!dpi
@@ -198,30 +202,31 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   ;   if signo lt 0 then p_i(5)=100. else p_i(5)=10.
 
   ;INITIALIZING WEIGHTS
-  WEIGHTS_INIT,NAXIS,STOKESPROF,w,sig,weight=weight,SIGMA=sigma,NOISE=noise
-  CLANDA=0 ;SOME DEFINITIONS TO CONTROL THE FUDGE PARAMETER
-  REPITE=1
-  pillado=0
-  ITER=0  ;DEFINING FIRST ITER
-  LANDA_STORE=DBLARR(MITER+1) ;Array to store lambda variation with iter
+  WEIGHTS_INIT,NAXIS,STOKESPROF,W,SIG,WEIGHT=WEIGHT,SIGMA=SIGMA,NOISE=NOISE
+
+  CLANDA = 0 ;SOME DEFINITIONS TO CONTROL THE FUDGE PARAMETER
+  REPITE = 1
+  PILLADO = 0
+  ITER = 0  ;DEFINING FIRST ITER
+  LANDA_STORE = DBLARR(MITER+1) ;Array to store lambda variation with iter
+  PARBETA = 10d0
 
   ;POLARIZATION THRESHOLD (If Stokes q, u, and v are below it, set B, GAMMA, and AZI to cero
-  index=indgen(n_comp)
-  IF keyword_set(pol) then begin
-    limp=pol
-    IF (max(abs(STOKESPROF(*,1))) lt limp) and  (max(abs(STOKESPROF(*,2))) lt limp) $
-      and (max(abs(STOKESPROF(*,3))) lt limp) then begin
-      p_i(1)=0. & p_i(5)=0. & p_i(6)=0
-      fixed(11*index+1)=0 & fixed(11*index+5)=0 & fixed(11*index+6)=0
-    endif
-  endif
+  IF KEYWORD_SET(pol) then begin
+    INDEX = INDGEN(N_COMP)
+    LIMP = POL
+    IF (MAX(ABS(STOKESPROF[*,1])) lt LIMP) AND (MAX(ABS(STOKESPROF[*,2])) lt LIMP) $
+      AND (MAX(ABS(STOKESPROF[*,3])) lt LIMP) THEN BEGIN
+        P_I[1] = 0D & P_I[5] = 0D & P_I[6] = 0D
+        FIXED[11*INDEX+1] = 0D & FIXED[11*INDEX+5] = 0D & FIXED[11*INDEX+6] = 0D
+    ENDIF
+  ENDIF
 
   ;Compute the ME RFs and the initial synthetic Stokes profiles for INIT MODEL
-  ME_DER,p_i,wli,AXIS,yfit,pder,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,$
-    AC_RATIO=ac_ratio,N_COMP=n_comp,numerical=numerical,ipbs=ipbs
+  ME_DER,P_I,WLI,AXIS,YFIT,PDER,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,$
+    AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs
 
   ;The derivatives with respect to fixed parameters are set to cero
-  fxx=where(fixed eq 1)
   for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 
 ; Take into account the local stray light in the merit function as in Asensio Ramos and Manso Sainz, 2010.
@@ -261,8 +266,9 @@ endif
   ;   endwhile
   ;print,flambda
 
-   P_M=P_I
-   yfitt = yfit
+   P_M = P_I
+
+   FXX=where(FIXED eq 1)
 
   ;BEGIND THE ITERATION LOOP FOR THE LM OPTIMIZATION ALGORITHM
 REPEAT BEGIN
@@ -271,7 +277,7 @@ REPEAT BEGIN
 
     IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
     COVAR=ALPHA
-    COVAR(DIAG)=COVAR(DIAG)*(1.+FLAMBDA)
+    COVAR(DIAG)=COVAR(DIAG)*(1D0+FLAMBDA)
     BETAD=BETA
 
 ;       INVERT COVARIANCE MATRIX TO FIND NEW MODEL PARAMETERS.
@@ -282,6 +288,30 @@ REPEAT BEGIN
 
     for i=0,11*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
 	  DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1)
+
+    IF VARFIX EQ 1 THEN BEGIN
+      CASE ITER OF
+      0: BEGIN
+            FIXED_OLD = FIXED
+            FIXED[4] = 0D0
+         END
+      1: BEGIN
+            FIXED[4] = 1D0
+            FIXED[0] = 0D0
+         END
+      2: BEGIN
+            FIXED[0] = 1D0
+            FIXED[3] = 0D0
+         END
+      ;2: BEGIN
+      ;      FIXED[4] = 1.
+      ;      FIXED[0] = 0.
+      ;   END
+      ELSE: FIXED = FIXED_OLD
+    ENDCASE
+      FXX=where(FIXED eq 1)
+      ;PRINT,'************##############***********',FIXED,'************##############***********'
+    ENDIF
 
     P_M(fxx) = P_I(fxx) - DELTA(fxx) ;NEW PARAMS
 
@@ -295,12 +325,11 @@ REPEAT BEGIN
 	;new chisqr
     CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
 
-;print,delta
 ;TEST!!!!
 goto,notest
     COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,CHISQRB,drho=dhro
     COVAR=ALPHA
-    COVAR(DIAG)=COVAR(DIAG)*(1.+FLAMBDA)
+    COVAR(DIAG)=COVAR(DIAG)*(1D0+FLAMBDA)
     BETAD=BETA
     MIL_SVD,COVAR,BETAD,DELTA,LOSW,use_svd_cordic = use_svd_cordic
     for i=0,11*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
@@ -311,8 +340,10 @@ goto,notest
       AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs
     CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
 notest:
-;TEST!!!!
-;print,delta
+
+;PARBETA = (ALOG10(CHISQR) - ALOG10(1))/( ALOG10(OCHISQR)- ALOG10(1)) * 0.8D0+0.1D0
+;PARBETA = PARBETA * ALOG10(ABS(CHISQR-OCHISQR))
+iter_info.lmb_new[ITER] = FLAMBDA*PARBETA
 
       ;****CONVERGENCE CONDITION *****
     IF CHISQR-OCHISQR lt 0. then begin ;;FIT GOT BETTER
@@ -322,7 +353,7 @@ notest:
       iter_info.conv_crit[ITER] = conv_crit[ITER]
 
       if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) OR (CHISQR lt 0.0001) $
-        THEN CLANDA = 1 ;Stoping criteria
+    THEN CLANDA = 1 ;Stoping criteria
 
       ;DECREASE FLAMBDA BY FACTOR OF 10
 
@@ -339,7 +370,7 @@ notest:
 ;flambda = flambda / ((pbeta-1)*(2*rho-1)^pp+10) ;*1-(pbeta-1)*(2*rho-1)^pp
 
       ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10
-      flambda=flambda/10d0
+      flambda=flambda/PARBETA
 
             ;RNOISE_PROBLEM
 ;      IF FLAMBDA LT 1 THEN BEGIN
@@ -360,7 +391,7 @@ notest:
       ;endif
 
       ;store new model parameters
-      P_I(fxx)=P_M(fxx)
+      P_I(FXX) = P_M(FXX)
       ;store parameters for studing the evolution of them (opt mode)
       Params_stored(*,goodc) = p_i
       iter_info.Params_stored[*,ITER] = P_I
@@ -402,7 +433,7 @@ notest:
 
       ;increase flambda by a factor 10
 
-      flambda=flambda*10d0
+      flambda=flambda*PARBETA
 
 ;    IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
 

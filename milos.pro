@@ -226,7 +226,7 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
     FILTER=filter,NOISE=noise,POL=pol,GETSHI=getshi,DOPLOT=doplot,MU=mu,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
-  use_svd_cordic = use_svd_cordic,ipbs=ipbs
+  use_svd_cordic = use_svd_cordic,ipbs=ipbs,varfix = varfix
 
 COMMON QUANTIC,C_N
 
@@ -433,7 +433,7 @@ ENDIF
       FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,$
 	  GETSHI=getshi,MU=mu,PLIMITS=plimits,VLIMITS=vlimits,$
 	  AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
-	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs
+	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,varfix = varfix
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]

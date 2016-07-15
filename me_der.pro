@@ -21,12 +21,12 @@
 ;                  mu=mu,slight=slight,filter=filter
 ;
 ; INPUTS:
-;           PARAM: Array with the 11 model-atmosphere parameters
+;           PARAM: Array with the 11 model-atmosphere PARAMeters
 ;               eta0 = line-to-continuum absorption coefficient ratio
 ;               B = magnetic field strength       [Gauss]
 ;               vlos = line-of-sight velocity     [km/s]
 ;               dopp = Doppler width              [Angstroms]
-;               aa = damping parameter
+;               aa = damping PARAMeter
 ;               gm = magnetic field inclination   [deg]
 ;               az = magnetic field azimuth       [deg]
 ;               S0 = source function constant
@@ -76,95 +76,81 @@
 ;   2015 n_comp
 ;-
 
-pro ME_DER,param,wl,lmb,spectra,d_spectra,TRIPLET=triplet,SLIGHT=slight,$
+pro ME_DER,PARAM,WL,LMB,SPECTRA,D_SPECTRA,TRIPLET=triplet,SLIGHT=slight,$
            FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,$
-           ipbs=ipbs
+           IPBS=ipbs
 
 
 COMMON QUANTIC,C_N
 
-If keyword_set(numerical) then begin
+IF KEYWORD_SET(NUMERICAL) THEN D_N = NUMERICAL ELSE D_N = 0
 
-    H=0.001
-    mil_sinrf,param,wl,lmb,yfit,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
-    pder=DBLARR(N_ELEMENTS(LMB),N_ELEMENTS(PARAM),4)
-    FOR I=0,N_ELEMENTS(PARAM)-1 DO BEGIN
-        PARAMN=PARAM
-        IF (ABS(PARAM(I)) gt 1e-2) THEN PARAMN(I)=PARAM(I)*(1.+H) ELSE PARAMN(I)=PARAM(I)+H
-        mil_sinrf,paramn,wl,lmb,yfitD,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
-        IF (ABS(PARAM(I)) gt 1e-2) THEN PARAMN(I)=PARAM(I)*(1.-H) ELSE PARAMN(I)=PARAM(I)-H
-        mil_sinrf,paramn,wl,lmb,yfitI,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
-        FOR J=0,3 DO PDER(*,I,J)=(YFITD(*,J)-YFITI(*,J))/(2.*(PARAM(I)-PARAMN(I)))
-    ENDFOR
+IF (D_N EQ 0) OR (D_N EQ 2) then begin  ;ANALITIC RESPONSE FUNCTIONS
 
-spectra = yfit
-d_spectra = pder
 
-endif else begin
+IF NOT(KEYWORD_SET(MU)) THEN MU=1D
+IF NOT(KEYWORD_SET(AC_RATIO)) THEN AC_RATIO=0D
 
-IF NOT(KEYWORD_SET(MU)) THEN MU=1d0
-IF NOT(KEYWORD_SET(AC_RATIO)) THEN AC_RATIO=0
-
-Lines=wl(0)
+LINES = WL[0]
 
 NTERMS = 11
-RR=5.641895836D-1
-CC=!dpi/180d0  ; conversion factor to radians
-NUML=n_elements(LMB)
-D_SPECTRA=DBLARR(NUML,NTERMS,4) ;E0,MF,VL,LD,A,GM,AZI,DB,MC
-D_SPECTRA_comp=DBLARR(NUML,NTERMS,4,n_comp)
-SPECTRA=DBLARR(NUML,4)
-SPECTRA_comp=DBLARR(NUML,4,n_comp)
-Vlight=2.99792458D+5   ; speed of light (cm/s)
+RR = 5.641895836D-1
+CC = !DPI/180D  ; conversion factor to radians
+NUML = N_ELEMENTS(LMB)
+D_SPECTRA = DBLARR(NUML,NTERMS,4) ;E0,MF,VL,LD,A,GM,AZI,DB,MC
+D_SPECTRA_COMP = DBLARR(NUML,NTERMS,4,N_COMP)
+SPECTRA = DBLARR(NUML,4)
+SPECTRA_COMP = DBLARR(NUML,4,N_COMP)
+VLIGHT = 2.99792458D+5   ; speed of light (cm/s)
 
-alpha = param(10)
-fill_fractions = dblarr(n_comp)
-if n_comp eq 2 then begin
-  fill_fractions(1:*)=param(11*(indgen(n_comp-1)+1)+10)
-  fill_fractions(0) = 1d0 - total(fill_fractions(1:*))
-endif else if n_comp gt 2 then begin
-  fill_fractions(1:*)=param(11*(indgen(n_comp-1)+1)+10)
-  fill_fractions(0) = param(10)
-endif else fill_fractions = 1d0
+ALPHA = PARAM[10]
+FILL_FRACTIONS = DBLARR(n_comp)
+IF N_COMP EQ 2 THEN BEGIN
+  FILL_FRACTIONS[1:*] = PARAM[11*(INDGEN(N_COMP-1)+1)+10]
+  FILL_FRACTIONS[0] = 1d0 - TOTAL(FILL_FRACTIONS[1:*])
+ENDIF ELSE IF n_comp gt 2 THEN BEGIN
+  FILL_FRACTIONS[1:*] = PARAM[11*(INDGEN(N_COMP-1)+1)+10]
+  FILL_FRACTIONS[0] = PARAM[10]
+ENDIF ELSE FILL_FRACTIONS = 1D
 
 
-for k=0,n_comp-1 do begin ;loop in components
+FOR k = 0,N_COMP-1 DO BEGIN ;loop in components
 
-;Model atmosphere parameters E0,MF,VL,LD,A,GM,AZI,B1,B2,MC,ALPHA
+;Model atmosphere PARAMeters E0,MF,VL,LD,A,GM,AZI,B1,B2,MC,ALPHA
 
-E00=param(11*k)
-MF=param(11*k+1)
-VL=param(11*k+2)
-LD=param(11*k+3)
-A=param(11*k+4)
-GM=param(11*k+5)
-AZI=param(11*k+6)
-B0=param(11*k+7)
-B1=param(11*k+8)
-MC=param(11*k+9)
+E00 = PARAM[11*k]
+MF  = PARAM[11*k+1]
+VL  = PARAM[11*k+2]
+LD  = PARAM[11*k+3]
+A   = PARAM[11*k+4]
+GM  = PARAM[11*k+5]
+AZI = PARAM[11*k+6]
+B0  = PARAM[11*k+7]
+B1  = PARAM[11*k+8]
+MC  = PARAM[11*k+9]
 
-if keyword_set(ipbs) then ipbs,MF,LD
+if KEYWORD_SET(IPBS) then IPBS,MF,LD
 
  ; propagation matrix elements derivatives
-D_EI=DBLARR(NUML,7) ;D_ETAI
-D_EQ=DBLARR(NUML,7) ;D_ETAQ
-D_EU=DBLARR(NUML,7) ;D_ETAU
-D_EV=DBLARR(NUML,7) ;D_ETAV
-D_RQ=DBLARR(NUML,7) ;D_RHOQ
-D_RU=DBLARR(NUML,7) ;D_RHOU
-D_RV=DBLARR(NUML,7) ;D_RHOV
+D_EI = DBLARR(NUML,7) ;D_ETAI
+D_EQ = DBLARR(NUML,7) ;D_ETAQ
+D_EU = DBLARR(NUML,7) ;D_ETAU
+D_EV = DBLARR(NUML,7) ;D_ETAV
+D_RQ = DBLARR(NUML,7) ;D_RHOQ
+D_RU = DBLARR(NUML,7) ;D_RHOU
+D_RV = DBLARR(NUML,7) ;D_RHOV
 
-ETAI=1D0 & ETAQ=0D0 & ETAU=0D0 & ETAV=0D0   ; propagation matrix elements
-RHOQ=0D0 & RHOU=0D0 & RHOV=0D0
-VNULO=DBLARR(NUML)
-DNULO=DBLARR(NUML,4,3)
-FI_P=VNULO & FI_B=VNULO & FI_R=VNULO
-SHI_P=VNULO & SHI_B=VNULO & SHI_R=VNULO
-DFI=DNULO  ;U,A,B,LD
-DSHI=DNULO  ;U,A,B,LD
+ETAI = 1D0 & ETAQ = 0D0 & ETAU = 0D0 & ETAV = 0D0   ; propagation matrix elements
+RHOQ = 0D0 & RHOU = 0D0 & RHOV = 0D0
+VNULO = DBLARR(NUML)
+DNULO = DBLARR(NUML,4,3)
+FI_P = VNULO & FI_B = VNULO & FI_R = VNULO
+SHI_P = VNULO & SHI_B = VNULO & SHI_R = VNULO
+DFI = DNULO  ;U,A,B,LD
+DSHI = DNULO  ;U,A,B,LD
 
-AZI=AZI*CC
-GM=GM*CC
+AZI = AZI*CC
+GM = GM*CC
 
 sinis=sin(GM)^2d0
 cosis=cos(GM)^2d0
@@ -209,19 +195,19 @@ For IL=0,Lines-1 do begin
 	endelse
 
     ; Wavelengths in units of the Doppler width
-    u=(LMB-wl(IL+1))/LD
+    U = (LMB-WL[IL+1])/LD
 
     ;frecuency shift for v line of sight
-    ulos=(VL*wl(IL+1))/(vlight*LD)
+    ULOS = (VL*WL[IL+1])/(VLIGHT*LD)
 
     IF NOT(KEYWORD_SET(TRIPLET)) THEN BEGIN
 
         ; GENERAL MULTIPLET CASE
         ;***************************************************
         ; Zeeman splittings
-	    nubB=(wl(IL+1)^2D0/ld)*(4.6686411D-13*C_N(IL).nub) ; sigma_b components
-   	 	nupB=(wl(IL+1)^2D0/ld)*(4.6686411D-13*C_N(IL).nup) ; pi components
-   		nurB=(wl(IL+1)^2D0/ld)*(4.6686411D-13*C_N(IL).nur) ; sigma_r components
+	    nubB=(wl(IL+1)^2D/ld)*(4.6686411D-13*C_N(IL).nub) ; sigma_b components
+   	 	nupB=(wl(IL+1)^2D/ld)*(4.6686411D-13*C_N(IL).nup) ; pi components
+   		nurB=(wl(IL+1)^2D/ld)*(4.6686411D-13*C_N(IL).nur) ; sigma_r components
     	;*************************************************
 
         ; Absorption and dispersion profiles initialization
@@ -551,7 +537,7 @@ IF MC gt 0.001 THEN BEGIN  ; The macroturbulent velocity
 	; Convolution of Stokes profiles Response Functions (except that for the macrovelocity)
 dd=d_spectra
     FOR PAR=0,3 DO BEGIN  ;loop in Stokes profiles
-        FOR ITER=0,6 DO BEGIN    ;loop in model parameters
+        FOR ITER=0,6 DO BEGIN    ;loop in model PARAMeters
             If abs(Mean(D_SPECTRA(*,ITER,PAR))) GT 1.e-25 then begin  ; Just in case...
             	FFTD=FFT(D_SPECTRA(0:NUML-edge,ITER,PAR),-1,/double)
 	 			; The convolution of Response Functions
@@ -571,7 +557,7 @@ ENDIF
 
 ; Instrumental profile
 
-IF keyword_set(filter) THEN BEGIN
+IF KEYWORD_SET(filter) THEN BEGIN
     DIMF=n_elements(filter)
     If dimf gt 1 then begin  ; The full filter profile is provided in this case
 
@@ -708,11 +694,9 @@ d_spectra = D_SPECTRA_comp
 endelse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-
 ; ADDING THE STRAY-LIGHT PROFILE
 
-IF keyword_set(slight) THEN BEGIN
+IF KEYWORD_SET(slight) THEN BEGIN
 	;Response Functions
     D_SPECTRA=D_SPECTRA*alpha
 
@@ -724,43 +708,63 @@ IF keyword_set(slight) THEN BEGIN
 
 ENDIF
 
-goto,borralo
-If keyword_set(numerical) then begin
+ENDIF ;END IF ANALYTICAL derivatives
 
-pder1=d_spectra
 
-!p.multi=[0,4,6]
-ERASE
-FOR J=0,nterms*n_comp-1 DO BEGIN
-    PLOT,PDER(*,j,0),TITLE='I'
-    OPLOT,PDER1(*,j,0),line=2,thick=2
-ENDFOR
-pause
-!p.multi=[0,4,6]
-ERASE
-FOR J=0,nterms*n_comp-1 DO BEGIN
-    PLOT,PDER(*,j,1),TITLE='Q'
-    OPLOT,PDER1(*,j,1),line=2,thick=2
-ENDFOR
-pause
-!p.multi=[0,4,6]
-ERASE
-FOR J=0,nterms*n_comp-1 DO BEGIN
-    PLOT,PDER(*,j,2),TITLE='U'
-    OPLOT,PDER1(*,j,2),line=2,thick=2
-ENDFOR
-pause
-!p.multi=[0,4,6]
-ERASE
-FOR J=0,nterms*n_comp-1 DO BEGIN
-    PLOT,PDER(*,j,3),TITLE='V'
-    OPLOT,PDER1(*,j,3),line=2,thick=2
-ENDFOR
-pause
-d_spectra = pder
-endif
-borralo:
 
-endelse
+If (D_N EQ 1) OR (D_N EQ 2) then begin  ;NUMERICAL RESPONSE FUNCTIONS
+
+  H=0.001
+  mil_sinrf,PARAM,wl,lmb,yfit,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
+  pder=DBLARR(N_ELEMENTS(LMB),N_ELEMENTS(PARAM),4)
+  FOR I=0,N_ELEMENTS(PARAM)-1 DO BEGIN
+      PARAMN=PARAM
+      IF (ABS(PARAM(I)) gt 1e-2) THEN PARAMN(I)=PARAM(I)*(1.+H) ELSE PARAMN(I)=PARAM(I)+H
+      mil_sinrf,PARAMn,wl,lmb,yfitD,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
+      IF (ABS(PARAM(I)) gt 1e-2) THEN PARAMN(I)=PARAM(I)*(1.-H) ELSE PARAMN(I)=PARAM(I)-H
+      mil_sinrf,PARAMn,wl,lmb,yfitI,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
+      FOR J=0,3 DO PDER(*,I,J)=(YFITD(*,J)-YFITI(*,J))/(2.*(PARAM(I)-PARAMN(I)))
+  ENDFOR
+
+ENDIF
+
+If (D_N EQ 2) THEN BEGIN  ;ANALITIC RESPONSE FUNCTIONS
+
+SPECTRA_N = YFIT
+D_SPECTRA_N = PDER
+
+window,1
+!p.multi=[0,11,4]
+FOR J=0,nterms*n_comp-1 DO BEGIN
+    PLOT,D_SPECTRA(*,j,0),TITLE='I'
+    OPLOT,D_SPECTRA_N(*,j,0),line=2,thick=2
+ENDFOR
+;window,2
+;!p.multi=[0,4,3]
+FOR J=0,nterms*n_comp-1 DO BEGIN
+    PLOT,D_SPECTRA(*,j,1),TITLE='Q'
+    OPLOT,D_SPECTRA_N(*,j,1),line=2,thick=2
+ENDFOR
+;window,3
+;!p.multi=[0,4,3]
+FOR J=0,nterms*n_comp-1 DO BEGIN
+    PLOT,D_SPECTRA(*,j,2),TITLE='U'
+    OPLOT,D_SPECTRA_N(*,j,2),line=2,thick=2
+ENDFOR
+;window,4
+;!p.multi=[0,4,3]
+FOR J=0,nterms*n_comp-1 DO BEGIN
+    PLOT,D_SPECTRA(*,j,3),TITLE='V'
+    OPLOT,D_SPECTRA_N(*,j,3),line=2,thick=2
+ENDFOR
+wait,1
+
+ENDIF ELSE If (D_N EQ 1) THEN BEGIN
+
+  SPECTRA = YFIT
+  D_SPECTRA = PDER
+
+ENDIF
+
 
 END

@@ -1,10 +1,10 @@
 ;+
-; NAME: 
+; NAME:
 ;	COVARM
 ;
-; AUTHOR: 
-;	D. Orozco Suarez  	
-;						National Astronomical Observatory of Japan,Ê
+; AUTHOR:
+;	D. Orozco Suarez
+;						National Astronomical Observatory of Japan,ï¿½
 ;						2-21-1 Osawa, Mitaka, 181-8588, JAPAN
 ;						d.orozco@nao.ac.jp
 ;
@@ -30,7 +30,7 @@
 ;           ALPHA: approximate-Hessian (covariance) matrix. Dimensions:  (NTERMS, NTERMS)
 ;           CHISQF: Scalar with the chi^2 merit function of the inversion. Dimensions: scalar
 ;
-; COMMON BLOCKS: 
+; COMMON BLOCKS:
 ;
 ; NOTES:
 ;
@@ -45,32 +45,30 @@
 
 PRO COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,CHISQR,drho=dhro
 
-  BT=DBLARR(NTERMS,4)
-  AP=DBLARR(NTERMS,NTERMS,4)
-  
+  BT = DBLARR(NTERMS,4)
+  AP = DBLARR(NTERMS,NTERMS,4)
+  UNOS = DBLARR(NTERMS)+1D
 
 if not(keyword_set(dhro)) then begin
 
   for I=0,3 do begin
     BT(*,I) = (W(*,I)*(YFIT(*,I)-STOKESPROF(*,I))#PDER(*,*,I))/SIG(I)^2d0
     AP(*,*,I)=(TRANSPOSE(PDER(*,*,I))#(W(*,I)$
-      #(FLTARR(NTERMS)+1)*PDER(*,*,I)))/SIG(I)^2d0
+      #UNOS*PDER(*,*,I)))/SIG(I)^2d0
   endfor
-  
+
 endif else begin
 
   for I=0,3 do begin
     BT(*,I) = (W(*,I)*(YFIT(*,I)-STOKESPROF(*,I))#PDER(*,*,I))/SIG(I)^2d0
-    BT(10,I) = BT(10,I) +  1./2.* total( W(*,I) * (YFIT(*,I)-STOKESPROF(*,I))^2d0 * drho(I) / (SIG(I)^2d0)^2d0 )
-    AP(*,*,I)=(TRANSPOSE(PDER(*,*,I))#(W(*,I)#(FLTARR(NTERMS)+1)*PDER(*,*,I)))/SIG(I)^2d0
+    BT(10,I) = BT(10,I) +  1D/2D* total( W(*,I) * (YFIT(*,I)-STOKESPROF(*,I))^2d0 * drho(I) / (SIG(I)^2d0)^2d0 )
+    AP(*,*,I)=(TRANSPOSE(PDER(*,*,I))#(W(*,I)#UNOS*PDER(*,*,I)))/SIG(I)^2d0
   endfor
 
   endelse
-  
+
   BETA = TOTAL(BT,2,/double)
   ALPHA = TOTAL(AP,3,/double)
   CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
-  
-  
-END
 
+END

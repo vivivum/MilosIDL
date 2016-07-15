@@ -51,6 +51,7 @@
 ;   First beta version created, D Orozco Suarez (DOS), 2008
 ;   Added some error handling, 24 Feb, 2008
 ;   Changed eta ceto from 0.342466 to 0.3266, 21 Jan, 2010. DOS
+;   All to double precision 2016. DOS
 ;-
 
 pro init_milos,LINES,WLI,quiet=quiet,not_normalize=not_normalize
@@ -62,7 +63,7 @@ IF N_PARAMS() NE 2 THEN BEGIN
 	print,' It seems that you are trying to execute INIT_MILOS with less or '
 	print,'   more that 2 parameters. Usage example:'
     print,'      IDL> INIT_MILOS,"6301",WL  '
-	print,' AVAILABLE LINES: '
+	  print,' AVAILABLE LINES: '
     print,'   Label = "6301"     , Line  ->  # Fe 6301.5 A               #    '
     print,'   Label = "6302"     , Line  ->  # Fe 6302.5 A               #'
     print,'   Label = "63016302" , Line  ->  # Fe 6301.5 A + Fe 6302.5 A #'
@@ -116,81 +117,81 @@ RESOLVE_ROUTINE,'covarm',/either
 CASE LINES OF
 '6301': BEGIN
 print,'### Fe 6301.5 ###'
-           WL=6301.515d0
+           WL=6301.515D
            slo=2 & llo=1 & jlo=2
            sup=2 & lup=2 & jup=2
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
         END
 '6302': BEGIN
 print,'### Fe 6302.5 ###'
-           WL=6302.494d0
+           WL=6302.494D
            slo=2 & llo=1 & jlo=1
            sup=2 & lup=2 & jup=0
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
         END
 '63016302': BEGIN
 print,'### Fe 6301.5 + Fe 6302.5 ###'
-           wl=[6301.5012d0 , 6302.4936d0]
+           wl=[6301.5012D , 6302.4936D]
            slo1=2 & llo1=1 & jlo1=2
            sup1=2 & lup1=2 & jup1=2
            slo2=2 & llo2=1 & jlo2=1
            sup2=2 & lup2=2 & jup2=0
            DATA=[2.,slo1,llo1,jlo1,sup1,lup1,jup1,1.,$
-                  slo2,llo2,jlo2,sup2,lup2,jup2,0.3266];0.342466]
+                  slo2,llo2,jlo2,sup2,lup2,jup2,0.3266D];0.342466]
             END
 '5250': BEGIN
 print,'### Fe 5250.2 + Fe 5250.6 ###'
-           wl=[5250.208d0 , 5250.645d0]
+           wl=[5250.208D , 5250.645D]
            slo1=2 & llo1=2 & jlo1=0
            sup1=3 & lup1=2 & jup1=1
            slo2=2 & llo2=1 & jlo2=2
            sup2=2 & lup2=1 & jup2=3
            DATA=[2.,slo1,llo1,jlo1,sup1,lup1,jup1,1.,$
-                  slo2,llo2,jlo2,sup2,lup2,jup2,0.3]
+                  slo2,llo2,jlo2,sup2,lup2,jup2,0.3D]
             END
 '5250.2': BEGIN
 print,'### Fe 5250.208 ###'
-           WL=5250.208d0
+           WL=5250.208D
            slo=2 & llo=2 & jlo=0
            sup=3 & lup=2 & jup=1
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
             END
 '5250.6': BEGIN
 print,'### Fe 5250.6 ###'
-           WL=5250.645d0
+           WL=5250.645D
            slo=2 & llo=1 & jlo=2
            sup=2 & lup=1 & jup=3
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
             END
 '6173': BEGIN
 print,'### Fe 6173.3 ###'
-           WL = 6173.3500 ; C_MILOS 6173.3356d0
+           WL = 6173.3356D ;6173.3500D ; C_MILOS 6173.3356d0
            slo=2 & llo=1 & jlo=1
            sup=2 & lup=2 & jup=0
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
         END
 '6767': BEGIN
 print,'### Fe 6767.79 ###'
-           WL=6767.79d0
+           WL=6767.79D
            slo=0 & llo=0 & jlo=0
            sup=1 & lup=1 & jup=1
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
         END
 '10830': BEGIN
 print,'### HELIUM LINE TRIPLET (SL COUPLING) ###'
-           WL = [ 10830.2501d0, 10830.3397d0, 10829.0911d0]
+           WL = [ 10830.2501D, 10830.3397D, 10829.0911D]
            slo0=1 & llo0=0 & jlo0=1
            sup0=1 & lup0=1 & jup0=1
            slo1=1 & llo1=0 & jlo1=1
            sup1=1 & lup1=1 & jup1=2
            slo2=1 & llo2=0 & jlo2=1
            sup2=1 & lup2=1 & jup2=0
-           DATA=[3.,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333,$
-                slo1,llo1,jlo1,sup1,lup1,jup1,0.556,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111]
+           DATA=[3.,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333D,$
+                slo1,llo1,jlo1,sup1,lup1,jup1,0.556D,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111D]
         END
 				'10830+si': BEGIN
 				print,'### HELIUM LINE TRIPLET (SL COUPLING) + Silicon ###'
-				           WL = [10827.089d0,10830.2501d0, 10830.3397d0, 10829.0911d0]
+				           WL = [10827.089D,10830.2501D, 10830.3397D, 10829.0911D]
 									 slo=1 & llo=1 & jlo=2
 									 sup=1 & lup=1 & jup=2
 				           slo0=1 & llo0=0 & jlo0=1
@@ -199,12 +200,12 @@ print,'### HELIUM LINE TRIPLET (SL COUPLING) ###'
 				           sup1=1 & lup1=1 & jup1=2
 				           slo2=1 & llo2=0 & jlo2=1
 				           sup2=1 & lup2=1 & jup2=0
-				           DATA=[4.,slo,llo,jlo,sup,lup,jup,1,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333,$
-				                slo1,llo1,jlo1,sup1,lup1,jup1,0.556,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111]
+				           DATA=[4.,slo,llo,jlo,sup,lup,jup,1,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333D,$
+				                slo1,llo1,jlo1,sup1,lup1,jup1,0.556D,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111D]
 				        END
 								'si': BEGIN
 								print,'### Silicon ###'
-								           WL = [10827.089d0]
+								           WL = [10827.089D]
 													 slo=1 & llo=1 & jlo=2
 													 sup=1 & lup=1 & jup=2
 								           DATA=[1.,slo,llo,jlo,sup,lup,jup,1]
@@ -212,7 +213,7 @@ print,'### HELIUM LINE TRIPLET (SL COUPLING) ###'
         ;3=FE 1      15648.515       1.0         5.426    -0.669  7D 1.0- 7D 1.0  0.229  2.7289e-14
 		'15648': BEGIN
 print,'### Fe 15648 ###'
-           WL=15648.515d0
+           WL=15648.515D
            slo=3 & llo=2 & jlo=1
            sup=3 & lup=2 & jup=1
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
@@ -240,7 +241,7 @@ ENDCASE
 
 CREATE_NC,DATA,not_normalize=not_normalize
 
-WLI = FLTARR ( N_ELEMENTS ( WL ) + 1)
+WLI = DBLARR ( N_ELEMENTS ( WL ) + 1)
 WLI[0] = N_ELEMENTS ( WL )
 IF N_ELEMENTS(WL) GT 1 THEN WLI[1:*] = WL ELSE WLI[1]=WL
 
