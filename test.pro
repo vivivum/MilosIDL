@@ -178,7 +178,7 @@ for i=0,999 do begin
     INIT_MODEL=INIT
 
     milos, wl, eje, init_model, y, chisqr=chisqr,yfit=yfit,$
-      sigma=sigma,fix=fix,/inversion,miter=100,/quiet,/doplot,Err=rr,$
+      sigma=sigma,fix=fix,/inversion,miter=100,/doplot,/quiet,Err=rr,$
       iter_info = iter_info
 	fm(i,*)=init_model
 	err(i,*)=rr

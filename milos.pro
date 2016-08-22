@@ -226,7 +226,7 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
     FILTER=filter,NOISE=noise,POL=pol,GETSHI=getshi,DOPLOT=doplot,MU=mu,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
-  use_svd_cordic = use_svd_cordic,ipbs=ipbs,varfix = varfix
+  use_svd_cordic = use_svd_cordic,ipbs=ipbs
 
 COMMON QUANTIC,C_N
 
@@ -368,7 +368,7 @@ endif
 	PLIMITS[index+3].LIMITS = [1d-4,6d-1]  ; Doppler width
 	PLIMITS[index+4].LIMITS = [1d-4,1d1]  ; Damping
 	PLIMITS[index+5].LIMITS = [0d0,180d0]  ; Inclination
-	PLIMITS[index+6].LIMITS = [0d0,360d0]  ; Azimuth
+	PLIMITS[index+6].LIMITS = [0d0,180d0]  ; Azimuth
 	PLIMITS[index+7].LIMITS = [1d-4,1d1]  ; S0
 	PLIMITS[index+8].LIMITS = [1d-4,1d1]  ; S1
 	PLIMITS[index+9].LIMITS = [0d0,4d0]  ; Macroturbulence
@@ -396,12 +396,12 @@ if keyword_set(PARLIMITS) then begin
 ENDIF
 
     VLIMITS = replicate( {set:0, limits:[0d0,0d0]} , 11* n_comp) ;define variable vlimits
-    VLIMITS[index+1].SET = 1
-    VLIMITS[index+1].LIMITS = [-1000d0,1000d0]
+    VLIMITS[index+1].SET = 0
+    VLIMITS[index+1].LIMITS = [-300d0,300d0]
     VLIMITS[index+5].SET = 1
-    VLIMITS[index+5].LIMITS = [-90d0,90d0]
+    VLIMITS[index+5].LIMITS = [-30d0,30d0]
     VLIMITS[index+6].SET = 1
-    VLIMITS[index+6].LIMITS = [-90d0,90d0]
+    VLIMITS[index+6].LIMITS = [-30d0,30d0]
     VLIMITS[index+9].SET = 1
     VLIMITS[index+9].LIMITS = [0d0,4d0] ;MACRO
 
@@ -417,7 +417,7 @@ if keyword_set(VARLIMITS) then begin
 		print,' '
 		return
 	endif
-	check_size = Size(VARLIMITS) ;FIXED Bug PARLIMITS -> VARLIMITS (24-Oct-2015)
+	check_size = Size(PARLIMITS)
 	If check_size(0) eq 1 then Howmany = 1 else Howmany = check_size(2)
 	FOR i=0, howmany -1 do begin
 		VLIMITS[VARLIMITS(0,i)].LIMITS = [ VARLIMITS(2,i) ,  VARLIMITS(3,i) ]
@@ -433,7 +433,7 @@ ENDIF
       FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,$
 	  GETSHI=getshi,MU=mu,PLIMITS=plimits,VLIMITS=vlimits,$
 	  AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
-	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,varfix = varfix
+	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]
