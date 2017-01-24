@@ -71,10 +71,11 @@
 ; 	First beta version created, D Orozco Su�rez (DOS) and J.C. del Toro Iniesta (JTI), 2007
 ;   First beta documentation version, JTI, June 2008
 ;   Added keywork AC_RATIO. 21 Jan, 2010. DOS
+;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
 ;-
 
 pro MIL_SINRF,PARAM,WL,LMB,SPECTRA,TRIPLET=triplet,MU=mu,SLIGHT=slight,$
-	FILTER=filter,AC_RATIO=ac_ratio,N_COMP=n_comp,ipbs=ipbs
+	FILTER=filter,AC_RATIO=ac_ratio,N_COMP=n_comp,ipbs=ipbs,crosst = crosst
 
 COMMON QUANTIC,C_N
 
@@ -307,6 +308,13 @@ IF MC gt 0.001 THEN BEGIN  ; The macroturbulent velocity
         ENDIF
     ENDFOR
 
+ENDIF
+
+IF keyword_set(crosst) THEN BEGIN
+	;assumes 1 component !!!! It uses param to add crosstalk values
+	;derivatives are numerically calculated!!!!!
+  MatrixCrosst = [[1,0,0,0],[PARAM[11],1,0,0],[PARAM[12],0,1,0],[PARAM[13],0,0,1]]
+FOR i=0,NUML-1 DO SPECTRA[i,*] = Matrixcrosst##SPECTRA[i,*]
 ENDIF
 
 ; Instrumental profile

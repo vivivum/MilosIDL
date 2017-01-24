@@ -155,7 +155,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
 	PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
 	N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
-  ipbs=ipbs
+  ipbs=ipbs,crosst = crosst
 
 ; Enviromental parameters
   prt = keyword_set(QUIET)
@@ -178,9 +178,8 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   VALID = WHERE(STOKESPROF ne 0.,HAY) ; If Y = 0 then the samples are not valid (e.g. blends)
   NFREE = (N_ELEMENTS(VALID)-NFIXSS)*1D0  ; Number of degrees of freedom
   NPOINTS = (SIZE(STOKESPROF))(1)
-
   ITER_INFO = {lmb:dblarr(miter+1),iter:0,citer:0,conv_crit:dblarr(miter+1),$
-               Params_stored:dblarr(nterms,miter+1)}
+               Params_stored:dblarr(nterms,miter+1),CHISQR:dblarr(miter+1)}
 
   if NFREE le 0 then begin
 	     PRINT,'Not enough points'
@@ -204,7 +203,9 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   PILLADO = 0
   ITER = 0  ;DEFINING FIRST ITER
   LANDA_STORE = DBLARR(MITER+1) ;Array to store lambda variation with iter
-  PARBETA = 10d0
+  PARBETA_better = 10d0
+  PARBETA_worst = 10d0
+  PARBETA_FACTOR = 1d0
 
   ;POLARIZATION THRESHOLD (If Stokes q, u, and v are below it, set B, GAMMA, and AZI to cero
   IF KEYWORD_SET(pol) then begin
@@ -219,7 +220,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
 
   ;Compute the ME RFs and the initial synthetic Stokes profiles for INIT MODEL
   ME_DER,P_I,WLI,AXIS,YFIT,PDER,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,$
-    AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs
+    AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs,crosst=crosst
 
   ;The derivatives with respect to fixed parameters are set to cero
   fxx = where(fixed eq 1)
@@ -249,7 +250,9 @@ endif
   ;BEGIND THE ITERATION LOOP FOR THE LM OPTIMIZATION ALGORITHM
 REPEAT BEGIN
 
-	  iter_info.lmb[ITER] = FLAMBDA
+    iter_info.lmb[ITER] = FLAMBDA
+    iter_info.CHISQR[ITER] = CHISQR
+    IF ITER GE 1 THEN PARBETA_FACTOR = alog10(iter_info.CHISQR[ITER])/alog10(iter_info.CHISQR[0])
 
     IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
     COVAR=ALPHA
@@ -272,7 +275,7 @@ REPEAT BEGIN
 
 	;EVALUATE FUNCTION
     mil_sinrf,p_m,wli,AXIS,yfit,triplet=triplet,slight=slight,filter=filter,$
-      AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs
+      AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs,crosst=crosst
 
 	;new chisqr
     CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
@@ -285,7 +288,7 @@ REPEAT BEGIN
     THEN CLANDA = 1 ;Stoping criteria
 
       ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10
-      flambda=flambda/PARBETA
+      flambda=flambda/(PARBETA_better*PARBETA_FACTOR)
 
             ;RNOISE_PROBLEM
 ;      IF FLAMBDA LT 1 THEN BEGIN
@@ -308,7 +311,7 @@ REPEAT BEGIN
 
       ;compute new RFs and Stokes profiles
       me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,$
-        AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs
+        AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs,crosst=crosst
 
       for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 
@@ -329,8 +332,7 @@ REPEAT BEGIN
 
       ;increase flambda by a factor 10
 
-      flambda=flambda*PARBETA
-
+      flambda=flambda*PARBETA_worst*PARBETA_FACTOR
       ;RNOISE_PROBLEM
 ;      IF FLAMBDA LT 1 THEN BEGIN
 ;      II = 1d0

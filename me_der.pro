@@ -74,19 +74,21 @@
 ;   First beta documentation version, JTI, June 2008
 ;   Improved documentation, DOS, 24 Feb, 2009
 ;   2015 n_comp
+;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
 ;-
 
 pro ME_DER,PARAM,WL,LMB,SPECTRA,D_SPECTRA,TRIPLET=triplet,SLIGHT=slight,$
            FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,$
-           IPBS=ipbs
+           IPBS=ipbs,crosst=crosst
 
 
 COMMON QUANTIC,C_N
 
+IF keyword_set(crosst) THEN NUMERICAL = 1
+
 IF KEYWORD_SET(NUMERICAL) THEN D_N = NUMERICAL ELSE D_N = 0
 
 IF (D_N EQ 0) OR (D_N EQ 2) then begin  ;ANALITIC RESPONSE FUNCTIONS
-
 
 IF NOT(KEYWORD_SET(MU)) THEN MU=1D
 IF NOT(KEYWORD_SET(AC_RATIO)) THEN AC_RATIO=0D
@@ -715,14 +717,14 @@ ENDIF ;END IF ANALYTICAL derivatives
 If (D_N EQ 1) OR (D_N EQ 2) then begin  ;NUMERICAL RESPONSE FUNCTIONS
 
   H=0.001
-  mil_sinrf,PARAM,wl,lmb,yfit,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
+  mil_sinrf,PARAM,wl,lmb,yfit,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst
   pder=DBLARR(N_ELEMENTS(LMB),N_ELEMENTS(PARAM),4)
   FOR I=0,N_ELEMENTS(PARAM)-1 DO BEGIN
       PARAMN=PARAM
       IF (ABS(PARAM(I)) gt 1e-2) THEN PARAMN(I)=PARAM(I)*(1.+H) ELSE PARAMN(I)=PARAM(I)+H
-      mil_sinrf,PARAMn,wl,lmb,yfitD,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
+      mil_sinrf,PARAMn,wl,lmb,yfitD,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst
       IF (ABS(PARAM(I)) gt 1e-2) THEN PARAMN(I)=PARAM(I)*(1.-H) ELSE PARAMN(I)=PARAM(I)-H
-      mil_sinrf,PARAMn,wl,lmb,yfitI,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp
+      mil_sinrf,PARAMn,wl,lmb,yfitI,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst
       FOR J=0,3 DO PDER(*,I,J)=(YFITD(*,J)-YFITI(*,J))/(2.*(PARAM(I)-PARAMN(I)))
   ENDFOR
 

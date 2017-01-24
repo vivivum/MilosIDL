@@ -185,6 +185,8 @@ for i=0,999 do begin
 	;wait,0.01
     print,'CHISQR VALUE: ',chisqr, ' Profile: ', i
     ch(i)=chisqr
+    if i eq 0 then iter_info_r = iter_info
+    if i gt 0 then iter_info_r = [iter_info_r,iter_info]
 
 endfor
 
@@ -205,6 +207,8 @@ print,''
 print,'------------------------------------------------------------------------'
 print,'Numer of points which the program did not converge: ',nl/1000.*100., ' %'
 print,'------------------------------------------------------------------------'
+
+histogauss,iter_info_r.citer/float(iter_info_r.iter),s1
 
 stop
 end
@@ -568,6 +572,7 @@ Print,'New model:' , init_model
 Profiler, /REPORT
 Profiler,/clear,/system
 Profiler,/clear,/reset
+stop
 end
 
 
@@ -666,5 +671,69 @@ elapsed_time = SYSTIME(/SECONDS) - start
 print,elapsed_time
 
 STOP
+
+end
+
+pro test_crosst
+
+loadct,0
+colors
+
+;************************PHYSICS CONSTANTS (INITIAL)******************
+B1=0.2 & B2=0.8
+eta0=12.5d0
+Magnet=1200.
+GAMMA=20.
+AZI=20.
+vlos=0.25  ;km/s
+MACRO=2.5
+LANDADOPP=0.09
+aa=0.09
+alfa=0.
+e1 = 0.001
+e2 = 0.005
+e3 = 0.005
+INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa,e1,e2,e3]
+
+;**********************************************************
+init_milos,'5250.6',wl
+
+;wavelength axis
+Init_landa=Wl(1)-0.4
+step=5d0
+Points=150.
+STEP=STEP/1000d0
+axis=Init_landa+Dindgen(Points)*step
+
+milos, Wl, axis, init_model, y, /synthesis, /doplot,/crosst
+
+WAIT,1
+
+milos, Wl, axis, init_model, y, rfs=rfs, /doplot,/crosst
+
+OLD=INIT_MODEL
+;Init model inversion
+B1=0.3 & B2=0.7
+eta0=12d0
+Magnet=100.
+GAMMA=90.
+AZI=60.
+vlos=0.25  ;km/s
+MACRO=2.5
+LANDADOPP=0.01
+aa=0.03
+alfa=0.
+INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa]
+
+fix=[1.,1.,1.,1.,1.,1.,1.,1.,1.,0.,0.,1.,1.,1.]
+weight=[1.,10.,10.,1.]
+
+
+INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,alfa,0.002,0.002,0.002]
+milos, wl, axis, init_model, y, yfit=yfit,$
+  fix=fix,/inversion,miter=100,noise=1.d-6,/doplot,ilambda=10.,toplim=1e-25,/crosst
+
+  Print,'New model:' , init_model
+Print,'Old model:' , OLD
 
 end

@@ -208,7 +208,7 @@
 ;   Added local straylight weight in merit function (See A. Asensio Ramos 2010) Aug, 2011. DOS
 ;   Added two components in Nov. 2011. DOS
 ;   Added numerical derivatives in Dec. 2011. DOS
-;
+;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
 ;-
 ; Original MILOS, Copyright (C) 2004-2011,  D. Orozco Suarez
 ; This software is provided as is without any warranty whatsoever.
@@ -226,7 +226,7 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
     FILTER=filter,NOISE=noise,POL=pol,GETSHI=getshi,DOPLOT=doplot,MU=mu,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
-  use_svd_cordic = use_svd_cordic,ipbs=ipbs
+  use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst
 
 COMMON QUANTIC,C_N
 
@@ -279,7 +279,7 @@ if not(keyword_set(n_components)) then n_comp=1 else n_comp = n_components
 
 ;MODEL has to be 11*c elements vector
 c1 = size (MODEL)
-if (c1(0) ne 1) or (c1(1) ne 11*n_comp) then begin
+if ((c1(0) ne 1) or (c1(1) ne 11*n_comp)) and (not(keyword_set(crosst))) then begin
 	print,' '
 	print,' --------------------- INPUT  ERROR -----------------------------'
 	print,' Input parameter MODEL does not have the correct dimensions      '
@@ -297,7 +297,7 @@ endif
   if keyword_set(synthesis) then begin
 
     mil_sinrf,MODEL,wli,AXIS,STOKESPROF,TRIPLET=triplet,SLIGHT=slight,$
-    FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP = n_comp,ipbs=ipbs
+    FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP = n_comp,ipbs=ipbs,crosst=crosst
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]
@@ -320,7 +320,7 @@ endif
  	if n_comp gt 1 then for i=1, n_comp-1 do fix[indgen(11)+i*11] = pn
  endif else begin
     cc = size(fix)
-    if (cc(0) ne 1) or (cc(1) ne 11*n_comp) then begin
+    if ((cc(0) ne 1) or (cc(1) ne 11*n_comp)) and (not(keyword_set(crosst))) then begin
  	print,'error in fix par'
  	return
  	endif
@@ -405,7 +405,7 @@ ENDIF
     VLIMITS[index+9].SET = 1
     VLIMITS[index+9].LIMITS = [0d0,4d0] ;MACRO
 
-   
+
 if keyword_set(VARLIMITS) then begin
 	Sz = size(VARLIMITS)
 	if Sz(1) ne 4 then begin
@@ -434,7 +434,7 @@ ENDIF
       FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,$
 	  GETSHI=getshi,MU=mu,PLIMITS=plimits,VLIMITS=vlimits,$
 	  AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
-	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs
+	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]
@@ -455,7 +455,7 @@ ENDIF
   endif else if ARG_PRESENT(RFS) then begin
 
     ME_DER,MODEL,WLI,AXIS,STOKESPROF,RFS,TRIPLET=triplet,ipbs=ipbs,$
-    SLIGHT=slight,FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,numerical=numerical
+    SLIGHT=slight,FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,numerical=numerical,crosst=crosst
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]
