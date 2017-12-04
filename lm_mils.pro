@@ -155,7 +155,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
 	PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
 	N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
-  ipbs=ipbs,crosst = crosst
+  ipbs=ipbs,crosst = crosst,LOGCLAMBDA=LOGCLAMBDA
 
 ; Enviromental parameters
   prt = keyword_set(QUIET)
@@ -252,7 +252,7 @@ REPEAT BEGIN
 
     iter_info.lmb[ITER] = FLAMBDA
     iter_info.CHISQR[ITER] = CHISQR
-    IF ITER GE 1 THEN PARBETA_FACTOR = alog10(iter_info.CHISQR[ITER])/alog10(iter_info.CHISQR[0])
+    IF (ITER GE 1) AND LOGCLAMBDA THEN PARBETA_FACTOR = alog10(iter_info.CHISQR[ITER])/alog10(iter_info.CHISQR[0])
 
     IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
     COVAR=ALPHA

@@ -105,7 +105,7 @@ return
   ;LA NUEVA: INVERT(V##W^2##TRANSPOSE(V))##V##W##TRANSPOSE(V)
   WW=dblarr(r,r)
   For j=0,r-1 do WW(j,j) = W(j)
-  MM = V##WW^2.##TRANSPOSE(V)
+  MM = V##WW^2D0##TRANSPOSE(V)
   SVDC,MM,W,UU,VV,/double  ;SVD decomposition
   zz=dblarr(r,r)
   For j=0,r-1 do zz(j,j) = (abs(w(j)) GT EPSILON*TOP) ? 1D0/w(j) : 0D0

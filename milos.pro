@@ -209,6 +209,7 @@
 ;   Added two components in Nov. 2011. DOS
 ;   Added numerical derivatives in Dec. 2011. DOS
 ;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
+;   Added keyword LOGCLAMBDA in Dec 2016 DOS
 ;-
 ; Original MILOS, Copyright (C) 2004-2011,  D. Orozco Suarez
 ; This software is provided as is without any warranty whatsoever.
@@ -226,7 +227,7 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
     FILTER=filter,NOISE=noise,POL=pol,GETSHI=getshi,DOPLOT=doplot,MU=mu,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
-  use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst
+  use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,LOGCLAMBDA = LOGCLAMBDA
 
 COMMON QUANTIC,C_N
 
@@ -276,6 +277,7 @@ if (wli(0) gt c2(1)) or (wli(0) gt n_elements(wli)-1) then begin
 endif
 
 if not(keyword_set(n_components)) then n_comp=1 else n_comp = n_components
+if not(KEYWORD_SET(LOGCLAMBDA)) then LOGCLAMBDA = 0
 
 ;MODEL has to be 11*c elements vector
 c1 = size (MODEL)
@@ -397,7 +399,7 @@ ENDIF
 
     VLIMITS = replicate( {set:0, limits:[0d0,0d0]} , 11* n_comp) ;define variable vlimits
     VLIMITS[index+1].SET = 1
-    VLIMITS[index+1].LIMITS = [-300d0,300d0]
+    VLIMITS[index+1].LIMITS = [-800d0,800d0]
     VLIMITS[index+5].SET = 1
     VLIMITS[index+5].LIMITS = [-30d0,30d0]
     VLIMITS[index+6].SET = 1
@@ -434,7 +436,8 @@ ENDIF
       FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,$
 	  GETSHI=getshi,MU=mu,PLIMITS=plimits,VLIMITS=vlimits,$
 	  AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
-	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst
+	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,$
+    LOGCLAMBDA = LOGCLAMBDA
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]

@@ -61,7 +61,7 @@ PRO  CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
   ;Magnetic field
   if (P_M(1) lt 0) and (PLIMITS(1).SET EQ 1) then begin
 	P_M(1) = (-1d0)*P_M(1)
-;	P_M(5) = 180d0 - P_M(5) ;CHANGED prueba CMILOS
+	P_M(5) = 180d0 - P_M(5) ;CHANGED prueba CMILOS
 ;    ch(1)=1
   endif
   ;Inclination
