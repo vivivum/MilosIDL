@@ -210,6 +210,7 @@
 ;   Added numerical derivatives in Dec. 2011. DOS
 ;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
 ;   Added keyword LOGCLAMBDA in Dec 2016 DOS
+;   Added keyword NLTE in Jul 2019 and modified program to deal with nlte DOS
 ;-
 ; Original MILOS, Copyright (C) 2004-2011,  D. Orozco Suarez
 ; This software is provided as is without any warranty whatsoever.
@@ -227,7 +228,8 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
     FILTER=filter,NOISE=noise,POL=pol,GETSHI=getshi,DOPLOT=doplot,MU=mu,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
-  use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,LOGCLAMBDA = LOGCLAMBDA
+    use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,LOGCLAMBDA = LOGCLAMBDA,$
+    nlte=nlte
 
 COMMON QUANTIC,C_N
 
@@ -278,28 +280,36 @@ endif
 
 if not(keyword_set(n_components)) then n_comp=1 else n_comp = n_components
 if not(KEYWORD_SET(LOGCLAMBDA)) then LOGCLAMBDA = 0
+IF KEYWORD_SET(NLTE) THEN BEGIN
+	NPAR = 15 
+;	print,'In NLTE mode RFs are numerical, for the moment.';
+;	print,'Setting numerical = 1'
+	numerical = 1
+ENDIF ELSE NPAR = 11
+;npar = 11 ;indice de nparams + 1 LTE
+;npar = 15 ;indice de nparams + 1 NLTE
 
 ;MODEL has to be 11*c elements vector
+;MODEL in NLTE case has to be 15*c
 c1 = size (MODEL)
-if ((c1(0) ne 1) or (c1(1) ne 11*n_comp)) and (not(keyword_set(crosst))) then begin
+if (c1(0) ne 1) or (c1(1) ne NPAR*n_comp) and not(keyword_set(crosst)) then begin
 	print,' '
 	print,' --------------------- INPUT  ERROR -----------------------------'
 	print,' Input parameter MODEL does not have the correct dimensions      '
-	print,'    Required: Array ( 11 , n_comp )                                       '
+	print,'    Required: Array ( '+NPAR+', n_comp )                                       '
 	print,'    Current input: Array ( ' , c1(0:1) , ' ) '
 	print,' ----------------------------------------------------------------'
 	print,' '
 	return
-endif
-
+endif 
 ; -----------------------------------------------------------------------
 ; Synthesis of the Stokes profiles without calculating response functions
 ; -----------------------------------------------------------------------
 
   if keyword_set(synthesis) then begin
-
-    mil_sinrf,MODEL,wli,AXIS,STOKESPROF,TRIPLET=triplet,SLIGHT=slight,$
-    FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP = n_comp,ipbs=ipbs,crosst=crosst
+	
+    mil_sinrf,model,wli,AXIS,STOKESPROF,TRIPLET=triplet,SLIGHT=slight,$
+    FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP = n_comp,ipbs=ipbs,crosst=crosst,nlte=nlte
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]
@@ -315,18 +325,24 @@ endif
 
   endif else if keyword_set(inversion) then begin
 
-     pn = [1,0,1,1,1,0,0,1,1,0,1]
- if not(keyword_set(fix)) then begin
- 	fix = fltarr(11*n_comp)
+ IF NOT(KEYWORD_SET(fix)) then begin
+    if NPAR eq 11 then pn = [1,0,1,1,1,0,0,1,1,0,1] else pn = [1,0,1,1,1,0,0,1,1,0,0,0,0,0,1] 
+ 	fix = fltarr(npar*n_comp)
  	fix[0:8] = 1d0
- 	if n_comp gt 1 then for i=1, n_comp-1 do fix[indgen(11)+i*11] = pn
+ 	if n_comp gt 1 then for i=1, n_comp-1 do fix[indgen(NPAR)+i*NPAR] = pn
  endif else begin
     cc = size(fix)
-    if ((cc(0) ne 1) or (cc(1) ne 11*n_comp)) and (not(keyword_set(crosst))) then begin
+    if ((cc(0) ne 1) or (cc(1) ne NPAR*n_comp)) and (NOT(KEYWORD_SET(crosst))) then begin
  	print,'error in fix par'
  	return
  	endif
  endelse
+; print,' '
+; print,' --------------------- FIX  PARAMETERS ---------------------------------------'
+; print,'  -> 1 means being free 0 fixed'
+; print,fix
+; print,' -----------------------------------------------------------------------------'
+; print,' '
 
 ;AXIS and STOKESPROF has to be same column dimension
 c1 = size (AXIS)
@@ -361,8 +377,8 @@ endif
 endif
 
 ;SET PLIMITS
-  index = indgen(n_comp)*11
-	PLIMITS = replicate( {set:0, limits:[0d0,0d0]} , 11* n_comp) ;define variable plimits
+  index = indgen(n_comp)*npar
+	PLIMITS = replicate( {set:0, limits:[0d0,0d0]} , npar* n_comp) ;define variable plimits
 	PLIMITS[*].SET = 1  ; Activate all limits
 	PLIMITS[index].LIMITS = [1d0,2500d0]  ; Eta0
 	PLIMITS[index+1].LIMITS = [0d0,4500d0]  ; Magnetic field
@@ -374,7 +390,15 @@ endif
 	PLIMITS[index+7].LIMITS = [1d-4,1d1]  ; S0
 	PLIMITS[index+8].LIMITS = [1d-4,1d1]  ; S1
 	PLIMITS[index+9].LIMITS = [0d0,4d0]  ; Macroturbulence
-	PLIMITS[index+10].LIMITS = [0d0,1d0]  ; Magnetic filling factor
+	IF NPAR eq 11 then begin
+		PLIMITS[index+10].LIMITS = [0d0,1d0]  ; Magnetic filling factor
+	ENDIF else begin
+		PLIMITS[index+14].LIMITS = [0d0,1d0]  ; Magnetic filling factor
+		PLIMITS[index+10].LIMITS = [0d0,10d0]  ; NLTE
+		PLIMITS[index+11].LIMITS = [-10d0,50d0]  ; NLTE  
+		PLIMITS[index+12].LIMITS = [0d0,10d0]  ; NLTE  
+		PLIMITS[index+13].LIMITS = [-10d0,50d0]  ; NLTE  
+	endelse
 
 if keyword_set(PARLIMITS) then begin
 	Sz = size(PARLIMITS)
@@ -397,7 +421,7 @@ if keyword_set(PARLIMITS) then begin
 
 ENDIF
 
-    VLIMITS = replicate( {set:0, limits:[0d0,0d0]} , 11* n_comp) ;define variable vlimits
+    VLIMITS = replicate( {set:0, limits:[0d0,0d0]} , npar* n_comp) ;define variable vlimits
     VLIMITS[index+1].SET = 1
     VLIMITS[index+1].LIMITS = [-800d0,800d0]
     VLIMITS[index+5].SET = 1
@@ -405,8 +429,17 @@ ENDIF
     VLIMITS[index+6].SET = 1
     VLIMITS[index+6].LIMITS = [-30d0,30d0]
     VLIMITS[index+9].SET = 1
-    VLIMITS[index+9].LIMITS = [0d0,4d0] ;MACRO
-
+    VLIMITS[index+9].LIMITS = [-1d0,1d0] ;MACRO
+	IF NPAR eq 15 then begin
+		VLIMITS[index+10].SET = 1
+		VLIMITS[index+10].LIMITS = [-1d0,1d0] ;A1
+		VLIMITS[index+11].SET = 1
+		VLIMITS[index+11].LIMITS = [-1d0,1d0] ;ap1
+		VLIMITS[index+12].SET = 1
+		VLIMITS[index+12].LIMITS = [-1d0,1d0] ;A2
+		VLIMITS[index+13].SET = 1
+		VLIMITS[index+13].LIMITS = [-1d0,1d0] ;AP2
+	ENDIF
 
 if keyword_set(VARLIMITS) then begin
 	Sz = size(VARLIMITS)
@@ -437,12 +470,12 @@ ENDIF
 	  GETSHI=getshi,MU=mu,PLIMITS=plimits,VLIMITS=vlimits,$
 	  AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
 	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,$
-    LOGCLAMBDA = LOGCLAMBDA
+      LOGCLAMBDA = LOGCLAMBDA,nlte=nlte
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]
     plot,AXIS,STOKESPROF(*,0),thick=2,title='I/Ic',/ynoz
-    oplot,AXIS,yfit(*,0),thick=3,color=4,line=2
+    oplot,AXIS,yfit(*,0),thick=3,color=4,line=2 
     plot,AXIS,STOKESPROF(*,3),thick=2,title='V/Ic'
     oplot,AXIS,yfit(*,3),thick=3,color=4,line=2
     plot,AXIS,STOKESPROF(*,1),thick=2,title='Q/Ic'
@@ -458,7 +491,8 @@ ENDIF
   endif else if ARG_PRESENT(RFS) then begin
 
     ME_DER,MODEL,WLI,AXIS,STOKESPROF,RFS,TRIPLET=triplet,ipbs=ipbs,$
-    SLIGHT=slight,FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,numerical=numerical,crosst=crosst
+    	SLIGHT=slight,FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,$
+		numerical=numerical,crosst=crosst,nlte=nlte
 
   if keyword_set(doplot) then begin
     !p.multi=[0,2,2]

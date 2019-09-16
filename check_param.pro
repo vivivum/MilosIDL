@@ -53,7 +53,7 @@
 ;-
 
 
-PRO  CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
+PRO  CHECK_PARAM,P_M,NPAR,PLIMITS=plimits,n_comp=n_comp
 
 ;ch=[0,0,0,0,0,0,0,0,0,0]
 ;lb=['eta0','magnet','vlos','landadopp','aa','gamma','azi','B1','B2','macro','alpha']
@@ -98,7 +98,7 @@ PRO  CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
 
   for i=0,4 do IF PLIMITS(i).SET EQ 1 THEN $
 	P_M(i) = PLIMITS(i).LIMITS(0) > P_M(i) < PLIMITS(i).LIMITS(1)
-  for i=7,10 do IF PLIMITS(i).SET EQ 1 THEN $
+  for i=7,NPAR-1 do IF PLIMITS(i).SET EQ 1 THEN $
 	P_M(i) = PLIMITS(i).LIMITS(0) > P_M(i) < PLIMITS(i).LIMITS(1)
 
 if n_comp ge 2 then begin
@@ -106,39 +106,39 @@ if n_comp ge 2 then begin
 for j = 1,n_comp do begin
 
   ;Magnetic field
-  if (P_M(1+11*(j-1)) lt 0) and (PLIMITS(1+11*(j-1)).SET EQ 1) then begin
-	P_M(1+11*(j-1)) = (-1d0)*P_M(1+11*(j-1))
-	P_M(5+11*(j-1)) = 180d0 - P_M(5+11*(j-1))
+  if (P_M(1+NPAR*(j-1)) lt 0) and (PLIMITS(1+NPAR*(j-1)).SET EQ 1) then begin
+	P_M(1+NPAR*(j-1)) = (-1d0)*P_M(1+NPAR*(j-1))
+	P_M(5+NPAR*(j-1)) = 180d0 - P_M(5+NPAR*(j-1))
 ;    ch(1)=1
   endif
   ;Inclination
-  If PLIMITS(5+11*(j-1)).SET EQ 1 THEN BEGIN
-  If P_M(5+11*(j-1)) LT PLIMITS[5+11*(j-1)].LIMITS(0)  THEN begin
-    P_M(5+11*(j-1)) = -P_M(5+11*(j-1))
+  If PLIMITS(5+NPAR*(j-1)).SET EQ 1 THEN BEGIN
+  If P_M(5+NPAR*(j-1)) LT PLIMITS[5+NPAR*(j-1)].LIMITS(0)  THEN begin
+    P_M(5+NPAR*(j-1)) = -P_M(5+NPAR*(j-1))
 ;    ch(5)=1
   endif
-  If P_M(5+11*(j-1)) GT PLIMITS[5+11*(j-1)].LIMITS(1)  THEN begin
-    P_M(5+11*(j-1)) = 360d0-P_M(5+11*(j-1))
+  If P_M(5+NPAR*(j-1)) GT PLIMITS[5+NPAR*(j-1)].LIMITS(1)  THEN begin
+    P_M(5+NPAR*(j-1)) = 360d0-P_M(5+NPAR*(j-1))
 ;    ch(5)=1
   endif
   ENDIF
 
   ;azimuth
-  If PLIMITS(6+11*(j-1)).SET EQ 1 THEN BEGIN
-  If P_M(6+11*(j-1)) LT 0. THEN  begin
-    P_M(6+11*(j-1)) = 180d0 + P_M(6+11*(j-1))
+  If PLIMITS(6+NPAR*(j-1)).SET EQ 1 THEN BEGIN
+  If P_M(6+NPAR*(j-1)) LT 0. THEN  begin
+    P_M(6+NPAR*(j-1)) = 180d0 + P_M(6+NPAR*(j-1))
 ;    ch(6)=1
   endif
-  If P_M(6+11*(j-1)) GT PLIMITS[6+11*(j-1)].LIMITS(1) THEN  begin
-    P_M(6+11*(j-1)) = P_M(6+11*(j-1)) - 180d0
+  If P_M(6+NPAR*(j-1)) GT PLIMITS[6+NPAR*(j-1)].LIMITS(1) THEN  begin
+    P_M(6+NPAR*(j-1)) = P_M(6+NPAR*(j-1)) - 180d0
 ;    ch(6)=1
   endif
 ENDIF
 
-  for i=0,4 do IF PLIMITS(i+11*(j-1)).SET EQ 1 THEN $
-	P_M(i+11*(j-1)) = PLIMITS(i+11*(j-1)).LIMITS(0) > P_M(i+11*(j-1)) < PLIMITS(i+11*(j-1)).LIMITS(1)
-  for i=7,10 do IF PLIMITS(i+11*(j-1)).SET EQ 1 THEN $
-	P_M(i+11*(j-1)) = PLIMITS(i+11*(j-1)).LIMITS(0) > P_M(i+11*(j-1)) < PLIMITS(i+11*(j-1)).LIMITS(1)
+  for i=0,4 do IF PLIMITS(i+NPAR*(j-1)).SET EQ 1 THEN $
+	P_M(i+NPAR*(j-1)) = PLIMITS(i+NPAR*(j-1)).LIMITS(0) > P_M(i+NPAR*(j-1)) < PLIMITS(i+NPAR*(j-1)).LIMITS(1)
+  for i=7,NPAR-1 do IF PLIMITS(i+NPAR*(j-1)).SET EQ 1 THEN $
+	P_M(i+NPAR*(j-1)) = PLIMITS(i+NPAR*(j-1)).LIMITS(0) > P_M(i+NPAR*(j-1)) < PLIMITS(i+NPAR*(j-1)).LIMITS(1)
 
 endfor
 

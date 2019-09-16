@@ -170,6 +170,27 @@ print,'### Fe 6173.3 ###'
            sup=2 & lup=2 & jup=0
            DATA=[1.,slo,llo,jlo,sup,lup,jup]
         END
+'5173': BEGIN
+print,'### Mg I b2 5773.3 ###'
+           WL = 5172.6844D ;6173.3500D ; C_MILOS 6173.3356d0
+           slo=1 & llo=1 & jlo=1
+           sup=1 & lup=0 & jup=1
+           DATA=[1.,slo,llo,jlo,sup,lup,jup]
+        END
+'8542': BEGIN
+print,'### Ca II 8542 ###'
+           WL = 8542.0880D ;
+           slo=1 & llo=2 & jlo=2.5
+           sup=1 & lup=1 & jup=1.5
+           DATA=[1.,slo,llo,jlo,sup,lup,jup]
+        END
+'8498': BEGIN
+print,'### Ca II 8498 ###'
+           WL = 8498.0230D ;
+           slo=1 & llo=2 & jlo=1.5
+           sup=1 & lup=1 & jup=1.5
+           DATA=[1.,slo,llo,jlo,sup,lup,jup]
+        END
 '6767': BEGIN
 print,'### Fe 6767.79 ###'
            WL=6767.79D
@@ -189,27 +210,27 @@ print,'### HELIUM LINE TRIPLET (SL COUPLING) ###'
            DATA=[3.,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333D,$
                 slo1,llo1,jlo1,sup1,lup1,jup1,0.556D,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111D]
         END
-				'10830+si': BEGIN
-				print,'### HELIUM LINE TRIPLET (SL COUPLING) + Silicon ###'
-				           WL = [10827.089D,10830.2501D, 10830.3397D, 10829.0911D]
-									 slo=1 & llo=1 & jlo=2
-									 sup=1 & lup=1 & jup=2
-				           slo0=1 & llo0=0 & jlo0=1
-				           sup0=1 & lup0=1 & jup0=1
-				           slo1=1 & llo1=0 & jlo1=1
-				           sup1=1 & lup1=1 & jup1=2
-				           slo2=1 & llo2=0 & jlo2=1
-				           sup2=1 & lup2=1 & jup2=0
-				           DATA=[4.,slo,llo,jlo,sup,lup,jup,1,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333D,$
-				                slo1,llo1,jlo1,sup1,lup1,jup1,0.556D,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111D]
-				        END
-								'si': BEGIN
-								print,'### Silicon ###'
-								           WL = [10827.089D]
-													 slo=1 & llo=1 & jlo=2
-													 sup=1 & lup=1 & jup=2
-								           DATA=[1.,slo,llo,jlo,sup,lup,jup,1]
-								        END
+        '10830+si': BEGIN
+        print,'### HELIUM LINE TRIPLET (SL COUPLING) + Silicon ###'
+        WL = [10827.089D,10830.2501D, 10830.3397D, 10829.0911D]
+        slo=1 & llo=1 & jlo=2
+        sup=1 & lup=1 & jup=2
+        slo0=1 & llo0=0 & jlo0=1
+        sup0=1 & lup0=1 & jup0=1
+        slo1=1 & llo1=0 & jlo1=1
+        sup1=1 & lup1=1 & jup1=2
+        slo2=1 & llo2=0 & jlo2=1
+        sup2=1 & lup2=1 & jup2=0
+        DATA=[4.,slo,llo,jlo,sup,lup,jup,1,slo0,llo0,jlo0,sup0,lup0,jup0,0.3333D,$
+        slo1,llo1,jlo1,sup1,lup1,jup1,0.556D,slo2,llo2,jlo2,sup2,lup2,jup2,0.1111D]
+        END
+        'si': BEGIN
+        print,'### Silicon ###'
+        WL = [10827.089D]
+        slo=1 & llo=1 & jlo=2
+        sup=1 & lup=1 & jup=2
+        DATA=[1.,slo,llo,jlo,sup,lup,jup,1]
+        END
         ;3=FE 1      15648.515       1.0         5.426    -0.669  7D 1.0- 7D 1.0  0.229  2.7289e-14
 		'15648': BEGIN
 print,'### Fe 15648 ###'
@@ -231,6 +252,8 @@ ELSE: BEGIN
     print,'   Label = "5250.2"   , Line  ->  # Fe 5250.208 A             #'
     print,'   Label = "5250.6"   , Line  ->  # Fe 5250.645 A             #'
     print,'   Label = "6173"     , Line  ->  # Fe 6173.3356 A            #'
+    print,'   Label = "5173"     , Line  ->  # Mg I b2 5172.6844 A            #'
+    print,'   Label = "8542"     , Line  ->  # Ca II 8542.0880 A            #'
     print,'   Label = "10830"    , Line  ->  # 10830 HELIUM LINE TRIPLET  '
     print,'                                    (SL COUPLING)             #'
     print,' ----------------------------------------------------------------'

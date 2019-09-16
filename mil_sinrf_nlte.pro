@@ -75,7 +75,7 @@
 ;   THIS ONE work in NLTE. July, 2019. DOS -> A. Dorantes PhD
 ;-
 
-pro MIL_SINRF,PARAM,WL,LMB,SPECTRA,TRIPLET=triplet,MU=mu,SLIGHT=slight,$
+pro MIL_SINRF_NLTE,PARAM,WL,LMB,SPECTRA,TRIPLET=triplet,MU=mu,SLIGHT=slight,$
 	FILTER=filter,AC_RATIO=ac_ratio,N_COMP=n_comp,ipbs=ipbs,crosst = crosst,NLTE=NLTE
 
 COMMON QUANTIC,C_N
@@ -97,28 +97,23 @@ CC=!dpi/180d0  ; conversion factor to radians
 
 ;alpha = param(10)
 ;ojo, ahora hay 4 mas
-IF KEYWORD_SET(NLTE) THEN BEGIN
-    ALPHA = PARAM[14] 
-    NPAR = 15
-ENDIF ELSE BEGIN
-    ALPHA = PARAM[10]
-    NPAR = 11
-ENDELSE
-;npar = 11 ;indice de nparams + 1 LTE
-;npar = 15 ;indice de nparams + 1 NLTE
+alpha = param(14)
 
-;FILL fraction in NLTE not tested yet
-IF N_COMP EQ 2 then begin
-    FILL_FRACTIONS[1:*] = PARAM[NPAR*(INDGEN(N_COMP-1)+1)+NPAR-1]
-    FILL_FRACTIONS[0] = 1d0 - TOTAL(FILL_FRACTIONS[1:*])
-ENDIF ELSE IF n_comp gt 2 THEN BEGIN
-    FILL_FRACTIONS[1:*] = PARAM[NPAR*(INDGEN(N_COMP-1)+1)+NPAR-1]
-    FILL_FRACTIONS[0] = PARAM[NPAR-1]
-ENDIF ELSE FILL_FRACTIONS = 1D
+fill_fractions = dblarr(n_comp)
+if n_comp eq 2 then begin
+	fill_fractions(1)=param(11*(indgen(n_comp-1)+1)+10)
+	fill_fractions(0) = 1d0 - total(fill_fractions(1:*))
+endif else if n_comp gt 2 then begin
+	fill_fractions(1:*)=param(11*(indgen(n_comp-1)+1)+10)
+	fill_fractions(0) = param(10)
+endif else fill_fractions = 1d0
 
-FOR k = 0,N_COMP-1 DO BEGIN ;loop in components
+for k=0,n_comp-1 do begin ;loop in components
 
 ;Model atmosphere parameters E0,MF,VL,LD,A,GM,AZI,B1,B2,MC,ALPHA
+IF NOT(keyword_set(NLTE)) THEN npar = 11 else npar = 15
+;npar = 11 ;indice de nparams + 1 LTE
+;npar = 15 ;indice de nparams + 1 NLTE
 E00=param(npar*k)
 MF=param(npar*k+1)
 VL=param(npar*k+2)
@@ -129,15 +124,15 @@ AZI=param(npar*k+6)
 B0=param(npar*k+7)
 B1=param(npar*k+8)
 MC=param(npar*k+9)
-IF KEYWORD_SET(NLTE) THEN BEGIN
-    A1  = PARAM(npar*k+10)
-    ap1 = PARAM(npar*k+11)
-    A2  = PARAM(npar*k+12)
-    ap2 = PARAM(npar*k+13)
+IF keyword_set(NLTE) THEN BEGIN
+    A1=param(npar*k+10)
+    ap1=param(npar*k+11)
+    A2=param(npar*k+12)
+    ap2=param(npar*k+13)
 ENDIF
 
 ;recalculo los nñumeros cuanticos para paschen back
-if KEYWORD_SET(IPBS) then IPBS,MF,LD
+if keyword_set(ipbs) then ipbs,MF,LD
 
     ;SPECTRA is still valid. I have to add the additional terms which depends on for more parameters
     ;these parameters are followed after the straylight component so no 2-comp available for this mode right now

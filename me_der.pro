@@ -62,6 +62,7 @@
 ;           with the more general case of a polarized stray-light profile.
 ;
 ;           The filter profile must have the same spectral resolution than the Stokes profiles.
+;			Numerical = 2 computes both RFs for comparison
 ;
 ; CALLED ROUTINES
 ;           FVOIGT: Calculates the Voigt and Faraday-Voigt functions
@@ -75,11 +76,12 @@
 ;   Improved documentation, DOS, 24 Feb, 2009
 ;   2015 n_comp
 ;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
+;   THIS ONE work in NLTE. July, 2019. DOS -> A. Dorantes PhD (only numerically)
 ;-
 
 pro ME_DER,PARAM,WL,LMB,SPECTRA,D_SPECTRA,TRIPLET=triplet,SLIGHT=slight,$
            FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,$
-           IPBS=ipbs,crosst=crosst
+           IPBS=ipbs,crosst=crosst,nlte=nlte
 
 
 COMMON QUANTIC,C_N
@@ -105,31 +107,45 @@ SPECTRA = DBLARR(NUML,4)
 SPECTRA_COMP = DBLARR(NUML,4,N_COMP)
 VLIGHT = 2.99792458D+5   ; speed of light (cm/s)
 
-ALPHA = PARAM[10]
-FILL_FRACTIONS = DBLARR(n_comp)
-IF N_COMP EQ 2 THEN BEGIN
-  FILL_FRACTIONS[1:*] = PARAM[11*(INDGEN(N_COMP-1)+1)+10]
-  FILL_FRACTIONS[0] = 1d0 - TOTAL(FILL_FRACTIONS[1:*])
-ENDIF ELSE IF n_comp gt 2 THEN BEGIN
-  FILL_FRACTIONS[1:*] = PARAM[11*(INDGEN(N_COMP-1)+1)+10]
-  FILL_FRACTIONS[0] = PARAM[10]
-ENDIF ELSE FILL_FRACTIONS = 1D
+IF KEYWORD_SET(NLTE) THEN BEGIN
+    ALPHA = PARAM[14] 
+    NPAR = 15
+ENDIF ELSE BEGIN
+    ALPHA = PARAM[10]
+    NPAR = 11
+ENDELSE
+;npar = 11 ;indice de nparams + 1 LTE
+;npar = 15 ;indice de nparams + 1 NLTE
 
+;FILL fraction in NLTE not tested yet
+IF N_COMP EQ 2 then begin
+    FILL_FRACTIONS[1:*] = PARAM[NPAR*(INDGEN(N_COMP-1)+1)+NPAR-1]
+    FILL_FRACTIONS[0] = 1d0 - TOTAL(FILL_FRACTIONS[1:*])
+ENDIF ELSE IF n_comp gt 2 THEN BEGIN
+    FILL_FRACTIONS[1:*] = PARAM[NPAR*(INDGEN(N_COMP-1)+1)+NPAR-1]
+    FILL_FRACTIONS[0] = PARAM[NPAR-1]
+ENDIF ELSE FILL_FRACTIONS = 1D
 
 FOR k = 0,N_COMP-1 DO BEGIN ;loop in components
 
 ;Model atmosphere PARAMeters E0,MF,VL,LD,A,GM,AZI,B1,B2,MC,ALPHA
 
-E00 = PARAM[11*k]
-MF  = PARAM[11*k+1]
-VL  = PARAM[11*k+2]
-LD  = PARAM[11*k+3]
-A   = PARAM[11*k+4]
-GM  = PARAM[11*k+5]
-AZI = PARAM[11*k+6]
-B0  = PARAM[11*k+7]
-B1  = PARAM[11*k+8]
-MC  = PARAM[11*k+9]
+E00 = PARAM[npar*k]
+MF  = PARAM[npar*k+1]
+VL  = PARAM[npar*k+2]
+LD  = PARAM[npar*k+3]
+A   = PARAM[npar*k+4]
+GM  = PARAM[npar*k+5]
+AZI = PARAM[npar*k+6]
+B0  = PARAM[npar*k+7]
+B1  = PARAM[npar*k+8]
+MC  = PARAM[npar*k+9]
+IF KEYWORD_SET(NLTE) THEN BEGIN
+    A1  = PARAM(npar*k+10)
+    ap1 = PARAM(npar*k+11)
+    A2  = PARAM(npar*k+12)
+    ap2 = PARAM(npar*k+13)
+ENDIF
 
 if KEYWORD_SET(IPBS) then IPBS,MF,LD
 
@@ -150,6 +166,13 @@ FI_P = VNULO & FI_B = VNULO & FI_R = VNULO
 SHI_P = VNULO & SHI_B = VNULO & SHI_R = VNULO
 DFI = DNULO  ;U,A,B,LD
 DSHI = DNULO  ;U,A,B,LD
+;->
+IF keyword_set(NLTE) THEN BEGIN
+    ;NOW the MATRIC C is different. Instead of ETAI = 1 + ETAI -> ap1*MU + 1 + ETAI
+    ETAI1_NLTE = 1D0 + ap1*MU
+    ETAI2_NLTE = 1D0 + ap2*MU
+ENDIF
+;-<
 
 AZI = AZI*CC
 GM = GM*CC
@@ -236,8 +259,8 @@ For IL=0,Lines-1 do begin
 	        dF_a=dH_u/2D0
 
 			;Absortion and dispersion profiles derivatives
-          DFI(*,1,0)=DFI(*,1,0)+C_N(IL).wep(i)*dH_u*(-wl(IL+1))/(vlight*LD)  ;VLOS
-          DSHI(*,1,0)=DSHI(*,1,0)+C_N(IL).wep(i)*dF_u*(-wl(IL+1))/(vlight*LD) ;VLOS
+            DFI(*,1,0)=DFI(*,1,0)+C_N(IL).wep(i)*dH_u*(-wl(IL+1))/(vlight*LD)  ;VLOS
+            DSHI(*,1,0)=DSHI(*,1,0)+C_N(IL).wep(i)*dF_u*(-wl(IL+1))/(vlight*LD) ;VLOS
     	    DFI(*,3,0)=DFI(*,3,0)+C_N(IL).wep(i)*dH_a
 	        DSHI(*,3,0)=DSHI(*,3,0)+C_N(IL).wep(i)*dF_a
     	    DFI(*,0,0)=DFI(*,0,0)+C_N(IL).wep(i)*dH_u*(-NUPB(i))  ;B
@@ -375,6 +398,7 @@ For IL=0,Lines-1 do begin
 
 ENDELSE
 
+	;VOY POR AQUI, AÑADIR DERIVADAS ANALITICAS NLTE (FACIL)
     ; Adding the necessary geometry and line strength
 
 	ETAIN=E0/2D0*(FI_P*sinis+(FI_B+FI_R)*(1D0+cosis)/2D0)
@@ -712,22 +736,22 @@ ENDIF
 
 ENDIF ;END IF ANALYTICAL derivatives
 
-
-
 If (D_N EQ 1) OR (D_N EQ 2) then begin  ;NUMERICAL RESPONSE FUNCTIONS
 
   H=0.001
-  mil_sinrf,PARAM,wl,lmb,yfit,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst
+  mil_sinrf,PARAM,wl,lmb,yfit,triplet=triplet,slight=slight,filter=filter,$
+  	        AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
   pder=DBLARR(N_ELEMENTS(LMB),N_ELEMENTS(PARAM),4)
   FOR I=0,N_ELEMENTS(PARAM)-1 DO BEGIN
       PARAMN=PARAM
       IF (ABS(PARAM(I)) gt 1e-2) THEN PARAMN(I)=PARAM(I)*(1.+H) ELSE PARAMN(I)=PARAM(I)+H
-      mil_sinrf,PARAMn,wl,lmb,yfitD,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst
+      mil_sinrf,PARAMn,wl,lmb,yfitD,triplet=triplet,slight=slight,filter=filter,$
+	            AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
       IF (ABS(PARAM(I)) gt 1e-2) THEN PARAMN(I)=PARAM(I)*(1.-H) ELSE PARAMN(I)=PARAM(I)-H
-      mil_sinrf,PARAMn,wl,lmb,yfitI,triplet=triplet,slight=slight,filter=filter,AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst
+      mil_sinrf,PARAMn,wl,lmb,yfitI,triplet=triplet,slight=slight,filter=filter,$
+	  		    AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
       FOR J=0,3 DO PDER(*,I,J)=(YFITD(*,J)-YFITI(*,J))/(2.*(PARAM(I)-PARAMN(I)))
   ENDFOR
-
 ENDIF
 
 If (D_N EQ 2) THEN BEGIN  ;ANALITIC RESPONSE FUNCTIONS

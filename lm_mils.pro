@@ -147,7 +147,7 @@
 ;   Added keywork VLIMITS=vlimits to constraint Delta. 27 Feb, 2009. DOS
 ;   Added local straylight weight in merit function (See A. Asensio Ramos 2010) Aug, 2011. DOS
 ;   Added two components in Nov. 2011. DOS
-;
+;   Added keyword NLTE in Jul 2019 and modified program to deal with nlte DOS
 ;-
 
 pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,toplim=toplim,$
@@ -155,7 +155,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
 	PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
 	N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
-  ipbs=ipbs,crosst = crosst,LOGCLAMBDA=LOGCLAMBDA
+  ipbs=ipbs,crosst = crosst,LOGCLAMBDA=LOGCLAMBDA,nlte=nlte
 
 ; Enviromental parameters
   prt = keyword_set(QUIET)
@@ -168,6 +168,8 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   if not(prt) then print,'Iterations='+string(miter)
   if not(keyword_set(noise)) then noise=1D-3 ; Default noise level
   if not(keyword_set(n_comp)) then n_comp=1D0  ; Maximum number of iterations
+
+  IF KEYWORD_SET(NLTE) THEN NPAR = 15 ELSE NPAR = 11
 
   NTERMS = N_ELEMENTS(P_I)*1D0
   NFIXSS = TOTAL(FIX)
@@ -183,6 +185,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
 
   if NFREE le 0 then begin
 	     PRINT,'Not enough points'
+       STOP
        RETURN
   endif
   P_M = DBLARR(NTERMS) ;New model aprameters
@@ -203,7 +206,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
   PILLADO = 0
   ITER = 0  ;DEFINING FIRST ITER
   LANDA_STORE = DBLARR(MITER+1) ;Array to store lambda variation with iter
-  PARBETA_better = 10d0
+  PARBETA_better = 5d0
   PARBETA_worst = 10d0
   PARBETA_FACTOR = 1d0
 
@@ -214,20 +217,20 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     IF (MAX(ABS(STOKESPROF[*,1])) lt LIMP) AND (MAX(ABS(STOKESPROF[*,2])) lt LIMP) $
       AND (MAX(ABS(STOKESPROF[*,3])) lt LIMP) THEN BEGIN
         P_I[1] = 0D0 & P_I[5] = 0D0 & P_I[6] = 0D0
-        FIXED[11*INDEX+1] = 0D0 & FIXED[11*INDEX+5] = 0D0 & FIXED[11*INDEX+6] = 0D0
+        FIXED[NPAR*INDEX+1] = 0D0 & FIXED[NPAR*INDEX+5] = 0D0 & FIXED[NPAR*INDEX+6] = 0D0
     ENDIF
   ENDIF
 
   ;Compute the ME RFs and the initial synthetic Stokes profiles for INIT MODEL
   ME_DER,P_I,WLI,AXIS,YFIT,PDER,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,$
-    AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs,crosst=crosst
+    AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs,crosst=crosst,nlte=nlte
 
   ;The derivatives with respect to fixed parameters are set to cero
   fxx = where(fixed eq 1)
   for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 
 ; Take into account the local stray light in the merit function as in Asensio Ramos and Manso Sainz, 2010.
-If keyword_set(mlocal) then begin
+If keyword_set(mlocal) then begin ;only valid out of NLTE
 	;mlocal is the number of averaged pixels
 	rho = dblarr(4)
 	drho = dblarr(4)
@@ -265,17 +268,17 @@ REPEAT BEGIN
 
 	;CHECK MAX VARIATION OF DELTA AND SET NEW MODEL P_M
 
-    for i=0,11*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
+    for i=0,NPAR*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
 	  DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1)
 
     P_M(fxx) = P_I(fxx) - DELTA(fxx) ;NEW PARAMS
-
+    
     ;CHECK PARAMETERS
-    CHECK_PARAM,P_M,PLIMITS=plimits,n_comp=n_comp
+    CHECK_PARAM,P_M,NPAR,PLIMITS=plimits,n_comp=n_comp
 
 	;EVALUATE FUNCTION
     mil_sinrf,p_m,wli,AXIS,yfit,triplet=triplet,slight=slight,filter=filter,$
-      AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs,crosst=crosst
+      AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs,crosst=crosst,nlte=nlte
 
 	;new chisqr
     CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
@@ -288,8 +291,7 @@ REPEAT BEGIN
     THEN CLANDA = 1 ;Stoping criteria
 
       ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10
-      flambda=flambda/(PARBETA_better*PARBETA_FACTOR)
-
+      flambda=flambda/(PARBETA_better*PARBETA_FACTOR)      
             ;RNOISE_PROBLEM
 ;      IF FLAMBDA LT 1 THEN BEGIN
 ;      II = 1d0
@@ -297,7 +299,7 @@ REPEAT BEGIN
 ;      II = II*10d0
 ;      FLAMBDA = ROUND(FLAMBDA*II)/II
 ;      ENDIF
-
+      
       ;store new model parameters
       P_I(FXX) = P_M(FXX)
       ;store parameters for studing the evolution of them (opt mode)
@@ -311,7 +313,7 @@ REPEAT BEGIN
 
       ;compute new RFs and Stokes profiles
       me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,$
-        AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs,crosst=crosst
+        AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs,crosst=crosst,nlte=nlte
 
       for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 
