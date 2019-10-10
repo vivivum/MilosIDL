@@ -216,15 +216,34 @@ pause
 PRINT,''
 
 INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,A1,ap1,A2,ap2,alfa]
-milos, Wl, axis, init_model, y, rfs=rfs, /doplot,/nlte
+milos, Wl, axis, init_model, y1, rfs=rfs1, /doplot,/nlte,numerical=1
+milos, Wl, axis, init_model, y2, rfs=rfs2, /doplot,/nlte,numerical=0
 
 ; window,0,xsize=2000,ysize=800
 ; !p.multi=[0,15,4]
 ; FOR I = 0,3 DO FOR J=0,15-1 DO PLOT,rfs(*,j,i),TITLE='RFS to '+strtrim(string(J),1)
 
+window,1
+colores
+!p.multi=[0,2,2]
+FOR I = 0,3 DO begin
+    PLOT,y1(*,i),TITLE='Stokes to '+strtrim(string(I),1),color=3
+    oPLOT,y2(*,i),line=2,thick=2,color=2
+endfor
+window,2
 !p.multi=[0,4,4]
-FOR I = 0,3 DO FOR J=10,13 DO PLOT,rfs(*,j,i),TITLE='RFS to '+strtrim(string(J),1)
+FOR I = 0,3 DO begin
+  FOR J=10,13 DO BEGIN
+    PLOT,rfs1(*,j,i),TITLE='RFS to '+strtrim(string(J),1),color=3
+    oPLOT,rfs2(*,j,i),line=2,thick=2,color=2
+  endfor
+endfor
 
+stop
+
+milos, Wl, axis, init_model, y, rfs=rfs, /doplot,/nlte,numerical=2
+
+stop
 
 PRINT,'CHECK RFSs NLTE'
 pause

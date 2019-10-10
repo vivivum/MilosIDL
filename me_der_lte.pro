@@ -97,16 +97,7 @@ IF NOT(KEYWORD_SET(AC_RATIO)) THEN AC_RATIO=0D
 
 LINES = WL[0]
 
-IF KEYWORD_SET(NLTE) THEN BEGIN
-    ALPHA = PARAM[14] 
-    NPAR = 15
-    NTERMS = 15
-ENDIF ELSE BEGIN
-    ALPHA = PARAM[10]
-    NPAR = 11
-    NTERMS = 11
-ENDELSE
-
+NTERMS = 11
 RR = 5.641895836D-1
 CC = !DPI/180D  ; conversion factor to radians
 NUML = N_ELEMENTS(LMB)
@@ -116,7 +107,13 @@ SPECTRA = DBLARR(NUML,4)
 SPECTRA_COMP = DBLARR(NUML,4,N_COMP)
 VLIGHT = 2.99792458D+5   ; speed of light (cm/s)
 
-
+IF KEYWORD_SET(NLTE) THEN BEGIN
+    ALPHA = PARAM[14] 
+    NPAR = 15
+ENDIF ELSE BEGIN
+    ALPHA = PARAM[10]
+    NPAR = 11
+ENDELSE
 ;npar = 11 ;indice de nparams + 1 LTE
 ;npar = 15 ;indice de nparams + 1 NLTE
 
@@ -423,97 +420,43 @@ ENDELSE
 	RHOU=RHOU+RHOUN
 	RHOV=RHOV+RHOVN
 
-    IF keyword_set(NLTE) THEN BEGIN
-        ;->
-        ETAI1N_NLTE=E0/2D0*(FI_P*sinis+(FI_B+FI_R)*(1D0+cosis)/2D0)
-        ETAI2N_NLTE=E0/2D0*(FI_P*sinis+(FI_B+FI_R)*(1D0+cosis)/2D0)
-        ETAI1_NLTE=ETAI1_NLTE+ETAI1N_NLTE
-        ETAI2_NLTE=ETAI2_NLTE+ETAI2N_NLTE
-        ;-<
-    ENDIF
+	; Derivatives with respect eta0
 
-    IF keyword_set(NLTE) THEN BEGIN
+	D_EI(*,0)=D_EI(*,0)+ETAIN/E0*DE0;C_N(IL).Fo
+	D_EQ(*,0)=D_EQ(*,0)+ETAQN/E0*DE0;C_N(IL).Fo
+	D_EU(*,0)=D_EU(*,0)+ETAUN/E0*DE0;C_N(IL).Fo
+	D_EV(*,0)=D_EV(*,0)+ETAVN/E0*DE0;C_N(IL).Fo
+	D_RQ(*,0)=D_RQ(*,0)+RHOQN/E0*DE0;C_N(IL).Fo
+	D_RU(*,0)=D_RU(*,0)+RHOUN/E0*DE0;C_N(IL).Fo
+	D_RV(*,0)=D_RV(*,0)+RHOVN/E0*DE0;C_N(IL).Fo
 
-        ; Derivatives with respect eta0
+	; Derivatives with respect B, VL, LDOPP, and A
 
-        D_EI(*,0)=D_EI(*,0)+ETAIN/E0*DE0;C_N(IL).Fo
-        D_EQ(*,0)=D_EQ(*,0)+ETAQN/E0*DE0;C_N(IL).Fo
-        D_EU(*,0)=D_EU(*,0)+ETAUN/E0*DE0;C_N(IL).Fo
-        D_EV(*,0)=D_EV(*,0)+ETAVN/E0*DE0;C_N(IL).Fo
-        D_RQ(*,0)=D_RQ(*,0)+RHOQN/E0*DE0;C_N(IL).Fo
-        D_RU(*,0)=D_RU(*,0)+RHOUN/E0*DE0;C_N(IL).Fo
-        D_RV(*,0)=D_RV(*,0)+RHOVN/E0*DE0;C_N(IL).Fo
+	D_EI(*,1:4)=D_EI(*,1:4)+E0*(DFI(*,*,0)*sinis+(DFI(*,*,1)+DFI(*,*,2))*(1D0+cosis)/2D0)/2D0
+	D_EQ(*,1:4)=D_EQ(*,1:4)+E0*(DFI(*,*,0)-(DFI(*,*,1)+DFI(*,*,2))/2D0)*sinis*cosa/2D0
+	D_EU(*,1:4)=D_EU(*,1:4)+E0*(DFI(*,*,0)-(DFI(*,*,1)+DFI(*,*,2))/2D0)*sinis*sina/2D0
+	D_EV(*,1:4)=D_EV(*,1:4)+E0*(DFI(*,*,2)-DFI(*,*,1))*cosi/2D0
+	D_RQ(*,1:4)=D_RQ(*,1:4)+E0*(DSHI(*,*,0)-(DSHI(*,*,1)+DSHI(*,*,2))/2D0)*sinis*cosa/2D0
+	D_RU(*,1:4)=D_RU(*,1:4)+E0*(DSHI(*,*,0)-(DSHI(*,*,1)+DSHI(*,*,2))/2D0)*sinis*sina/2D0
+	D_RV(*,1:4)=D_RV(*,1:4)+E0*(DSHI(*,*,2)-DSHI(*,*,1))*cosi/2D0
 
-        ;D_EI_NLTE(*,0)=D_EI_NLTE(*,0)+ETAIN/E0*DE0;C_N(IL).Fo
-        ;D_EI_NLTE(*,0) = D_EI(*,0)+ETAIN/E0*DE0 ;SAME because d(ap1*MU + 1 + ETAI)/d(e0) = d(ETAI)/d(e0)
+	; Derivatives with respect inclination
 
-        ; Derivatives with respect B, VL, LDOPP, and A
+	D_EI(*,5)=D_EI(*,5)+E0/2D0*(FI_P*sindi+(FI_B+FI_R)*cosi*cosdi)
+	D_EQ(*,5)=D_EQ(*,5)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sindi*cosa
+	D_EU(*,5)=D_EU(*,5)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sindi*sina
+	D_EV(*,5)=D_EV(*,5)+E0/2D0*(FI_R-FI_B)*cosdi
+	D_RQ(*,5)=D_RQ(*,5)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sindi*cosa
+	D_RU(*,5)=D_RU(*,5)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sindi*sina
+	D_RV(*,5)=D_RV(*,5)+E0/2D0*(SHI_R-SHI_B)*cosdi
 
-        D_EI(*,1:4)=D_EI(*,1:4)+E0*(DFI(*,*,0)*sinis+(DFI(*,*,1)+DFI(*,*,2))*(1D0+cosis)/2D0)/2D0
-        D_EQ(*,1:4)=D_EQ(*,1:4)+E0*(DFI(*,*,0)-(DFI(*,*,1)+DFI(*,*,2))/2D0)*sinis*cosa/2D0
-        D_EU(*,1:4)=D_EU(*,1:4)+E0*(DFI(*,*,0)-(DFI(*,*,1)+DFI(*,*,2))/2D0)*sinis*sina/2D0
-        D_EV(*,1:4)=D_EV(*,1:4)+E0*(DFI(*,*,2)-DFI(*,*,1))*cosi/2D0
-        D_RQ(*,1:4)=D_RQ(*,1:4)+E0*(DSHI(*,*,0)-(DSHI(*,*,1)+DSHI(*,*,2))/2D0)*sinis*cosa/2D0
-        D_RU(*,1:4)=D_RU(*,1:4)+E0*(DSHI(*,*,0)-(DSHI(*,*,1)+DSHI(*,*,2))/2D0)*sinis*sina/2D0
-        D_RV(*,1:4)=D_RV(*,1:4)+E0*(DSHI(*,*,2)-DSHI(*,*,1))*cosi/2D0
+	; Derivatives with respect azimuth
 
-        ; Derivatives with respect inclination
+	D_EQ(*,6)=D_EQ(*,6)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sinis*cosda
+	D_EU(*,6)=D_EU(*,6)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sinis*sinda
+	D_RQ(*,6)=D_RQ(*,6)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sinis*cosda
+	D_RU(*,6)=D_RU(*,6)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sinis*sinda
 
-        D_EI(*,5)=D_EI(*,5)+E0/2D0*(FI_P*sindi+(FI_B+FI_R)*cosi*cosdi)
-        D_EQ(*,5)=D_EQ(*,5)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sindi*cosa
-        D_EU(*,5)=D_EU(*,5)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sindi*sina
-        D_EV(*,5)=D_EV(*,5)+E0/2D0*(FI_R-FI_B)*cosdi
-        D_RQ(*,5)=D_RQ(*,5)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sindi*cosa
-        D_RU(*,5)=D_RU(*,5)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sindi*sina
-        D_RV(*,5)=D_RV(*,5)+E0/2D0*(SHI_R-SHI_B)*cosdi
-
-        ; Derivatives with respect azimuth
-
-        D_EQ(*,6)=D_EQ(*,6)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sinis*cosda
-        D_EU(*,6)=D_EU(*,6)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sinis*sinda
-        D_RQ(*,6)=D_RQ(*,6)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sinis*cosda
-        D_RU(*,6)=D_RU(*,6)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sinis*sinda
-
-    ENDIF else begin
-        
-                ; Derivatives with respect eta0
-
-        D_EI(*,0)=D_EI(*,0)+ETAIN/E0*DE0;C_N(IL).Fo
-        D_EQ(*,0)=D_EQ(*,0)+ETAQN/E0*DE0;C_N(IL).Fo
-        D_EU(*,0)=D_EU(*,0)+ETAUN/E0*DE0;C_N(IL).Fo
-        D_EV(*,0)=D_EV(*,0)+ETAVN/E0*DE0;C_N(IL).Fo
-        D_RQ(*,0)=D_RQ(*,0)+RHOQN/E0*DE0;C_N(IL).Fo
-        D_RU(*,0)=D_RU(*,0)+RHOUN/E0*DE0;C_N(IL).Fo
-        D_RV(*,0)=D_RV(*,0)+RHOVN/E0*DE0;C_N(IL).Fo
-
-        ; Derivatives with respect B, VL, LDOPP, and A
-
-        D_EI(*,1:4)=D_EI(*,1:4)+E0*(DFI(*,*,0)*sinis+(DFI(*,*,1)+DFI(*,*,2))*(1D0+cosis)/2D0)/2D0
-        D_EQ(*,1:4)=D_EQ(*,1:4)+E0*(DFI(*,*,0)-(DFI(*,*,1)+DFI(*,*,2))/2D0)*sinis*cosa/2D0
-        D_EU(*,1:4)=D_EU(*,1:4)+E0*(DFI(*,*,0)-(DFI(*,*,1)+DFI(*,*,2))/2D0)*sinis*sina/2D0
-        D_EV(*,1:4)=D_EV(*,1:4)+E0*(DFI(*,*,2)-DFI(*,*,1))*cosi/2D0
-        D_RQ(*,1:4)=D_RQ(*,1:4)+E0*(DSHI(*,*,0)-(DSHI(*,*,1)+DSHI(*,*,2))/2D0)*sinis*cosa/2D0
-        D_RU(*,1:4)=D_RU(*,1:4)+E0*(DSHI(*,*,0)-(DSHI(*,*,1)+DSHI(*,*,2))/2D0)*sinis*sina/2D0
-        D_RV(*,1:4)=D_RV(*,1:4)+E0*(DSHI(*,*,2)-DSHI(*,*,1))*cosi/2D0
-
-        ; Derivatives with respect inclination
-
-        D_EI(*,5)=D_EI(*,5)+E0/2D0*(FI_P*sindi+(FI_B+FI_R)*cosi*cosdi)
-        D_EQ(*,5)=D_EQ(*,5)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sindi*cosa
-        D_EU(*,5)=D_EU(*,5)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sindi*sina
-        D_EV(*,5)=D_EV(*,5)+E0/2D0*(FI_R-FI_B)*cosdi
-        D_RQ(*,5)=D_RQ(*,5)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sindi*cosa
-        D_RU(*,5)=D_RU(*,5)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sindi*sina
-        D_RV(*,5)=D_RV(*,5)+E0/2D0*(SHI_R-SHI_B)*cosdi
-
-        ; Derivatives with respect azimuth
-
-        D_EQ(*,6)=D_EQ(*,6)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sinis*cosda
-        D_EU(*,6)=D_EU(*,6)+E0/2D0*(FI_P-(FI_B+FI_R)/2D0)*sinis*sinda
-        D_RQ(*,6)=D_RQ(*,6)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sinis*cosda
-        D_RU(*,6)=D_RU(*,6)+E0/2D0*(SHI_P-(SHI_B+SHI_R)/2D0)*sinis*sinda
-
-    endelse
 ENDFOR
 
 ; THE STOKES PROFILES AND THEIR RESPONSE FUNCTIONS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -536,44 +479,7 @@ SPECTRA(*,1)=(-B1*DTI*(GP4+RHOQ*GP2))*MU
 SPECTRA(*,2)=(-B1*DTI*(GP5+RHOU*GP2))*MU
 SPECTRA(*,3)=(-B1*DTI*(GP6+RHOV*GP2))*MU
 
-;->
-IF keyword_set(NLTE) THEN BEGIN
-    GP1_NLTE1=(ETAI1_NLTE^2D0-ETAQ^2D0-ETAU^2D0-ETAV^2D0+RHOQ^2D0+RHOU^2D0+RHOV^2D0)
-    GP2_NLTE1=(ETAQ*RHOQ+ETAU*RHOU+ETAV*RHOV)
-    DT_NLTE1=ETAI1_NLTE^2D0*GP1_NLTE1-GP2_NLTE1^2D0
-    DTI_NLTE1=1D0/DT_NLTE1
-    GP3_NLTE1=(ETAI1_NLTE^2D0+RHOQ^2D0+RHOU^2D0+RHOV^2D0)
-    GP4_NLTE1=ETAI1_NLTE^2D0*ETAQ+ETAI1_NLTE*(ETAV*RHOU-ETAU*RHOV)
-    GP5_NLTE1=ETAI1_NLTE^2D0*ETAU+ETAI1_NLTE*(ETAQ*RHOV-ETAV*RHOQ)
-    GP6_NLTE1=ETAI1_NLTE^2D0*ETAV+ETAI1_NLTE*(ETAU*RHOQ-ETAQ*RHOU)
-
-    GP1_NLTE2=(ETAI2_NLTE^2D0-ETAQ^2D0-ETAU^2D0-ETAV^2D0+RHOQ^2D0+RHOU^2D0+RHOV^2D0)
-    GP2_NLTE2=(ETAQ*RHOQ+ETAU*RHOU+ETAV*RHOV)
-    DT_NLTE2=ETAI2_NLTE^2D0*GP1_NLTE2-GP2_NLTE2^2D0
-    DTI_NLTE2=1D0/DT_NLTE2
-    GP3_NLTE2=(ETAI2_NLTE^2D0+RHOQ^2D0+RHOU^2D0+RHOV^2D0)
-    GP4_NLTE2=ETAI2_NLTE^2D0*ETAQ+ETAI2_NLTE*(ETAV*RHOU-ETAU*RHOV)
-    GP5_NLTE2=ETAI2_NLTE^2D0*ETAU+ETAI2_NLTE*(ETAQ*RHOV-ETAV*RHOQ)
-    GP6_NLTE2=ETAI2_NLTE^2D0*ETAV+ETAI2_NLTE*(ETAU*RHOQ-ETAQ*RHOU)
-
-    SPECTRA(*,0)= SPECTRA(*,0) + $
-                A1*(1d0 - ap1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1) - $
-                A2*(1d0 - (1+ap2*MU)*DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2)
-    SPECTRA(*,1)= SPECTRA(*,1) + $
-                A1*ap1*MU*DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1)-$
-                A2*(1+ap2*MU)*DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2)
-    SPECTRA(*,2)= SPECTRA(*,2) + $
-                A1*ap1*MU*DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1)-$
-                A2*(1+ap2*MU)*DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2)
-    SPECTRA(*,3)= SPECTRA(*,3) + $
-                A1*ap1*MU*DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1)-$
-                A2*(1+ap2*MU)*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2)
-
-ENDIF
-;-<
-
-
-; Loop to compute the Response Functions corresponding to E0, MF, VL, Doppl, A, GAMMA, and AZI
+; Loop to compute the Response Functions corresponding to E0, MF, VL, A, GAMMA, and AZI
 
 FOR ITER=0,6 DO BEGIN
 
@@ -585,75 +491,24 @@ FOR ITER=0,6 DO BEGIN
 	D_DT=2D0*ETAI*D_EI(*,ITER)*GP1+ETAI^2D0*DGP1-2.*GP2*DGP2
 	DGP3=2D0*(ETAI*D_EI(*,ITER)+RHOQ*D_RQ(*,ITER)+RHOU*D_RU(*,ITER)+RHOV*D_RV(*,ITER))
 
+	D_SPECTRA(*,ITER,0)=B1*MU*((D_EI(*,ITER)*GP3+ETAI*DGP3)*DT-D_DT*ETAI*GP3)/DT^2D0
+
 	DGP4=D_EI(*,ITER)*(2D0*ETAI*ETAQ+ETAV*RHOU-ETAU*RHOV)+ETAI^2D0*D_EQ(*,ITER)+$
 		ETAI*(RHOU*D_EV(*,ITER)+ETAV*D_RU(*,ITER)-RHOV*D_EU(*,ITER)-ETAU*D_RV(*,ITER))
+
+	D_SPECTRA(*,ITER,1)=-B1*MU*((DGP4+D_RQ(*,ITER)*GP2+RHOQ*DGP2)*DT-D_DT*(GP4+RHOQ*GP2))/DT^2D0
 
 	DGP5=D_EI(*,ITER)*(2.*ETAI*ETAU+ETAQ*RHOV-ETAV*RHOQ)+ETAI^2.*D_EU(*,ITER)+$
 		ETAI*(RHOV*D_EQ(*,ITER)+ETAQ*D_RV(*,ITER)-RHOQ*D_EV(*,ITER)-ETAV*D_RQ(*,ITER))
 
+	D_SPECTRA(*,ITER,2)=-B1*MU*((DGP5+D_RU(*,ITER)*GP2+RHOU*DGP2)*DT-D_DT*(GP5+RHOU*GP2))/DT^2D0
+
 	DGP6=D_EI(*,ITER)*(2D0*ETAI*ETAV+ETAU*RHOQ-ETAQ*RHOU)+ETAI^2D0*D_EV(*,ITER)+$
 		ETAI*(RHOQ*D_EU(*,ITER)+ETAU*D_RQ(*,ITER)-RHOU*D_EQ(*,ITER)-ETAQ*D_RU(*,ITER))
 
-	D_SPECTRA(*,ITER,0)=B1*MU*((D_EI(*,ITER)*GP3+ETAI*DGP3)*DT-D_DT*ETAI*GP3)/DT^2D0
-	D_SPECTRA(*,ITER,1)=-B1*MU*((DGP4+D_RQ(*,ITER)*GP2+RHOQ*DGP2)*DT-D_DT*(GP4+RHOQ*GP2))/DT^2D0
-	D_SPECTRA(*,ITER,2)=-B1*MU*((DGP5+D_RU(*,ITER)*GP2+RHOU*DGP2)*DT-D_DT*(GP5+RHOU*GP2))/DT^2D0
 	D_SPECTRA(*,ITER,3)=-B1*MU*((DGP6+D_RV(*,ITER)*GP2+RHOV*DGP2)*DT-D_DT*(GP6+RHOV*GP2))/DT^2D0
 
-    IF keyword_set(NLTE) THEN BEGIN
-
-	DGP1_NLTE1=2D0*(ETAI1_NLTE*D_EI(*,ITER)-ETAQ*D_EQ(*,ITER)-ETAU*D_EU(*,ITER)-ETAV*D_EV(*,ITER)+$
-		RHOQ*D_RQ(*,ITER)+RHOU*D_RU(*,ITER)+RHOV*D_RV(*,ITER))
-	DGP2_NLTE1=RHOQ*D_EQ(*,ITER)+ETAQ*D_RQ(*,ITER)+RHOU*D_EU(*,ITER)+ETAU*D_RU(*,ITER)+$
-		RHOV*D_EV(*,ITER)+ETAV*D_RV(*,ITER)
-	D_DT_NLTE1=2D0*ETAI1_NLTE*D_EI(*,ITER)*GP1_NLTE1+ETAI1_NLTE^2D0*DGP1_NLTE1-2.*GP2_NLTE1*DGP2_NLTE1
-	DGP3_NLTE1=2D0*(ETAI1_NLTE*D_EI(*,ITER)+RHOQ*D_RQ(*,ITER)+RHOU*D_RU(*,ITER)+RHOV*D_RV(*,ITER))
-	DGP4_NLTE1=D_EI(*,ITER)*(2D0*ETAI1_NLTE*ETAQ+ETAV*RHOU-ETAU*RHOV)+ETAI1_NLTE^2D0*D_EQ(*,ITER)+$
-		ETAI1_NLTE*(RHOU*D_EV(*,ITER)+ETAV*D_RU(*,ITER)-RHOV*D_EU(*,ITER)-ETAU*D_RV(*,ITER))
-	DGP5_NLTE1=D_EI(*,ITER)*(2.*ETAI1_NLTE*ETAU+ETAQ*RHOV-ETAV*RHOQ)+ETAI1_NLTE^2.*D_EU(*,ITER)+$
-		ETAI1_NLTE*(RHOV*D_EQ(*,ITER)+ETAQ*D_RV(*,ITER)-RHOQ*D_EV(*,ITER)-ETAV*D_RQ(*,ITER))
-	DGP6_NLTE1=D_EI(*,ITER)*(2D0*ETAI1_NLTE*ETAV+ETAU*RHOQ-ETAQ*RHOU)+ETAI1_NLTE^2D0*D_EV(*,ITER)+$
-		ETAI1_NLTE*(RHOQ*D_EU(*,ITER)+ETAU*D_RQ(*,ITER)-RHOU*D_EQ(*,ITER)-ETAQ*D_RU(*,ITER))
-
-	DGP1_NLTE2=2D0*(ETAI2_NLTE*D_EI(*,ITER)-ETAQ*D_EQ(*,ITER)-ETAU*D_EU(*,ITER)-ETAV*D_EV(*,ITER)+$
-		RHOQ*D_RQ(*,ITER)+RHOU*D_RU(*,ITER)+RHOV*D_RV(*,ITER))
-	DGP2_NLTE2=RHOQ*D_EQ(*,ITER)+ETAQ*D_RQ(*,ITER)+RHOU*D_EU(*,ITER)+ETAU*D_RU(*,ITER)+$
-		RHOV*D_EV(*,ITER)+ETAV*D_RV(*,ITER)
-	D_DT_NLTE2=2D0*ETAI2_NLTE*D_EI(*,ITER)*GP1_NLTE2+ETAI2_NLTE^2D0*DGP1_NLTE2-2.*GP2_NLTE2*DGP2_NLTE2
-	DGP3_NLTE2=2D0*(ETAI2_NLTE*D_EI(*,ITER)+RHOQ*D_RQ(*,ITER)+RHOU*D_RU(*,ITER)+RHOV*D_RV(*,ITER))
-	DGP4_NLTE2=D_EI(*,ITER)*(2D0*ETAI2_NLTE*ETAQ+ETAV*RHOU-ETAU*RHOV)+ETAI2_NLTE^2D0*D_EQ(*,ITER)+$
-		ETAI2_NLTE*(RHOU*D_EV(*,ITER)+ETAV*D_RU(*,ITER)-RHOV*D_EU(*,ITER)-ETAU*D_RV(*,ITER))
-	DGP5_NLTE2=D_EI(*,ITER)*(2.*ETAI2_NLTE*ETAU+ETAQ*RHOV-ETAV*RHOQ)+ETAI2_NLTE^2.*D_EU(*,ITER)+$
-		ETAI2_NLTE*(RHOV*D_EQ(*,ITER)+ETAQ*D_RV(*,ITER)-RHOQ*D_EV(*,ITER)-ETAV*D_RQ(*,ITER))
-	DGP6_NLTE2=D_EI(*,ITER)*(2D0*ETAI2_NLTE*ETAV+ETAU*RHOQ-ETAQ*RHOU)+ETAI2_NLTE^2D0*D_EV(*,ITER)+$
-		ETAI2_NLTE*(RHOQ*D_EU(*,ITER)+ETAU*D_RQ(*,ITER)-RHOU*D_EQ(*,ITER)-ETAQ*D_RU(*,ITER))
-
-	D_SPECTRA(*,ITER,0) = D_SPECTRA(*,ITER,0) - $
-                A1 * ap1 * MU * ((-1.) * D_DT_NLTE1*ETAI1_NLTE*GP3_NLTE1 / DT_NLTE1^2. + $
-                DTI_NLTE1*D_EI[*,ITER]*GP3_NLTE1 + DTI_NLTE1*ETAI1_NLTE*DGP3_NLTE1) + $ 
-                A2 * (1+ap2*MU) * ((-1.) * D_DT_NLTE2*ETAI2_NLTE*GP3_NLTE2 / DT_NLTE2^2.+ $
-                DTI_NLTE2*D_EI[*,ITER]*GP3_NLTE2 + DTI_NLTE2*ETAI2_NLTE*DGP3_NLTE2)
-
-	D_SPECTRA(*,ITER,1)= D_SPECTRA(*,ITER,1) + $
-                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1) / DT_NLTE1^2. + $
-                DTI_NLTE1 * (DGP4_NLTE1 + D_RQ[*,ITER]*GP2_NLTE1 + RHOQ*DGP2_NLTE1) ) - $
-                A2 * (1+ap2*MU) * ( (-1.) * D_DT_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2)  / DT_NLTE2^2.+ $
-                DTI_NLTE2 * (DGP4_NLTE2 + D_RQ[*,ITER]*GP2_NLTE2 + RHOQ*DGP2_NLTE2) )
-
-	D_SPECTRA(*,ITER,2)= D_SPECTRA(*,ITER,2) + $
-                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1) / DT_NLTE1^2. + $
-                DTI_NLTE1 * (DGP5_NLTE1 + D_RU[*,ITER]*GP2_NLTE1 + RHOU*DGP2_NLTE1) ) - $
-                A2 * (1+ap2*MU) * ( (-1.) * D_DT_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2)  / DT_NLTE2^2.+ $
-                DTI_NLTE2 * (DGP5_NLTE2 + D_RU[*,ITER]*GP2_NLTE2 + RHOU*DGP2_NLTE2) )
-
-	D_SPECTRA(*,ITER,3)= D_SPECTRA(*,ITER,3) + $
-                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1) / DT_NLTE1^2. + $
-                DTI_NLTE1 * (DGP6_NLTE1 + D_RV[*,ITER]*GP2_NLTE1 + RHOV*DGP2_NLTE1) ) - $
-                A2 * (1+ap2*MU) * ( (-1.) * D_DT_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2)  / DT_NLTE2^2.+ $
-                DTI_NLTE2 * (DGP6_NLTE2 + D_RV[*,ITER]*GP2_NLTE2 + RHOV*DGP2_NLTE2) )
-
-    ENDIF
-
-ENDFOR 
+ENDFOR
 
 ;Response Functions with respect B0 and B1
 D_SPECTRA(*,7,0)=1D0 & D_SPECTRA(*,8,0)=DTI*ETAI*GP3*MU
@@ -663,75 +518,6 @@ D_SPECTRA(*,7,3)=0D0 & D_SPECTRA(*,8,3)=-DTI*(GP6+RHOV*GP2)*MU
 
 D_SPECTRA(*,6,0)=0D0  ;AZIMUTH STOKES I
 D_SPECTRA(*,6,3)=0D0  ;AZIMUTH STOKES V
-
-    IF keyword_set(NLTE) THEN BEGIN
-
-;Response Functions with respect A1, A2, ap1, ap2 
-
-;A1
-D_SPECTRA(*,10,0) = (1d0 - ap1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1)
-D_SPECTRA(*,10,1) = ap1*MU*DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1)
-D_SPECTRA(*,10,2) = ap1*MU*DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1)
-D_SPECTRA(*,10,3) = ap1*MU*DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1)
-;A2
-D_SPECTRA(*,12,0) = -(1d0 - (1+ap2*MU)*DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2)
-D_SPECTRA(*,12,1) = -(1+ap2*MU)*DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2)
-D_SPECTRA(*,12,2) = -(1+ap2*MU)*DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2)
-D_SPECTRA(*,12,3) = -(1+ap2*MU)*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2)
-;NOT CORRECT.(BELOW) I RUN 11 and 13 NUMERICALLY
-;ap1 
-D_SPECTRA(*,11,0) = -A1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1 + $
-                     A1*ap1*MU*MU*(DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1)^2 
-D_SPECTRA(*,11,1) = -A1*MU*DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1) - $
-                     A1*ap1*MU*MU*(DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1))^2*ap1^2 
-D_SPECTRA(*,11,2) = -A1*MU*DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1) - $
-                     A1*ap1*MU*MU*(DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1))^2*ap1^2
-D_SPECTRA(*,11,3) = -A1*MU*DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1) - $
-                     A1*ap1*MU*MU*(DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1))^2*ap1^2
-;ap2     
-D_SPECTRA(*,13,0) = A2*MU*DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2 - $
-                    A2*(1+ap2*MU)*MU*(DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2)^2 
-D_SPECTRA(*,13,1) = A2*MU*DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2) - $
-                    A2*(1+ap2*MU)*MU*(DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2))^2                      
-D_SPECTRA(*,13,2) = A2*MU*DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2) - $
-                    A2*(1+ap2*MU)*MU*(DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2))^2 
-D_SPECTRA(*,13,3) = A2*MU*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2) - $
-                    A2*(1+ap2*MU)*MU*(DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2))^2 
-
-    ; SPECTRA(*,0)= SPECTRA(*,0) + $
-    ;             A1*(1d0 - ap1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1) - $
-    ;             A2*(1d0 - (1+ap2*MU)*DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2)
-    ; SPECTRA(*,1)= SPECTRA(*,1) + $
-    ;             A1*ap1*MU*DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1) - $
-    ;             A2*(1+ap2*MU)*DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2)
-    ; SPECTRA(*,2)= SPECTRA(*,2) + $
-    ;             A1*ap1*MU*DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1) - $
-    ;             A2*(1+ap2*MU)*DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2)
-    ; SPECTRA(*,3)= SPECTRA(*,3) + $
-    ;             A1*ap1*MU*DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1) - $
-    ;             A2*(1+ap2*MU)*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2)
-
-;   mil_sinrf,PARAM,wl,lmb,yfit,triplet=triplet,slight=slight,filter=filter,$
-;   	        AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
-;   pder=DBLARR(N_ELEMENTS(LMB),N_ELEMENTS(PARAM),4)
-
-;goto,jum
-    H=0.001
-    PARAMN=PARAM
-    IP = [11,13]
-    FOR Ipc = 0,n_elements(IP)-1 do begin
-        IF (ABS(PARAM(IP[Ipc])) gt 1e-2) THEN PARAMN(IP[Ipc])=PARAM(IP[Ipc])*(1.+H) $
-            ELSE PARAMN(IP[Ipc])=PARAM(IP[Ipc])+H
-        mil_sinrf,PARAMn,wl,lmb,yfitD,triplet=triplet,slight=slight,filter=filter,$
-                AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
-        IF (ABS(PARAM(IP[Ipc])) gt 1e-2) THEN PARAMN(IP[Ipc])=PARAM(IP[Ipc])*(1.-H) $
-            ELSE PARAMN(IP[Ipc])=PARAM(IP[Ipc])-H
-        mil_sinrf,PARAMn,wl,lmb,yfitI,triplet=triplet,slight=slight,filter=filter,$
-                AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
-        FOR J=0,3 DO D_SPECTRA(*,IP[Ipc],J)=(YFITD(*,J)-YFITI(*,J))/(2.*(PARAM(IP[Ipc])-PARAMN(IP[Ipc])))
-    ENDFOR
-    jum:
-ENDIF
 
 ; CONVOLUTIONS WITH THE MACROTURBULENT VELOCITY AND THE INSTRUMENTAL PROFILE
 
@@ -788,7 +574,6 @@ dd=d_spectra
 	            D_SPECTRA(0:NUML-edge,ITER,PAR)=shift(D_SPECTRA(0:NUML-edge,ITER,PAR),-NUML/2)
 			ENDIF
         ENDFOR
-        ;Parameter 7 is missing (is a constant)
         	ITER = 8
             If abs(Mean(D_SPECTRA(*,ITER,PAR))) GT 1.e-25 then begin  ; Just in case...
             	FFTD=FFT(D_SPECTRA(0:NUML-edge,ITER,PAR),-1,/double)
@@ -796,16 +581,6 @@ dd=d_spectra
 	            D_SPECTRA(0:NUML-edge,ITER,PAR)=FFT(FFTD*FFTG1,1,/double)*NUMLn
 	            D_SPECTRA(0:NUML-edge,ITER,PAR)=shift(D_SPECTRA(0:NUML-edge,ITER,PAR),-NUML/2)
 			ENDIF
-            IF keyword_set(NLTE) THEN BEGIN
-                FOR ITER=10,13 DO BEGIN    ;loop in model PARAMeters
-                    If abs(Mean(D_SPECTRA(*,ITER,PAR))) GT 1.e-25 then begin  ; Just in case...
-                        FFTD=FFT(D_SPECTRA(0:NUML-edge,ITER,PAR),-1,/double)
-                        ; The convolution of Response Functions
-                        D_SPECTRA(0:NUML-edge,ITER,PAR)=FFT(FFTD*FFTG1,1,/double)*NUMLn
-                        D_SPECTRA(0:NUML-edge,ITER,PAR)=shift(D_SPECTRA(0:NUML-edge,ITER,PAR),-NUML/2)
-                    ENDIF
-                ENDFOR
-            ENDIF
     ENDFOR
 ENDIF
 
@@ -861,7 +636,7 @@ IF KEYWORD_SET(filter) THEN BEGIN
 	                D_SPECTRA_EXT(*,ITER,PAR)=shift(D_SPECTRA_EXT(*,ITER,PAR),-SH)
                 ENDIF
             ENDFOR
-            FOR ITER=8,9 DO BEGIN  ;Y AHORA LO TENGO AQUI SIN COMENTAR!!!!!!!!!!!!!
+            FOR ITER=8,9 DO BEGIN
                 If abs(Mean(D_SPECTRA_EXT(*,ITER,PAR))) GT 1.e-25 then begin ; Just in case
 	                FFTD=FFT(D_SPECTRA_EXT(*,ITER,PAR),-1,/double)
 		               ;The convolution
@@ -913,16 +688,6 @@ IF KEYWORD_SET(filter) THEN BEGIN
 	                D_SPECTRA(0:NUML-edge,ITER,PAR)=shift(D_SPECTRA(0:NUML-edge,ITER,PAR),-NUML/2)
                 ENDIF
 			ENDFOR
-            IF keyword_set(NLTE) THEN BEGIN
-                FOR ITER=10,13 DO BEGIN    ;loop in model PARAMeters
-                    If abs(Mean(D_SPECTRA(*,ITER,PAR))) GT 1.e-25 then begin  ; Just in case...
-                        FFTD=FFT(D_SPECTRA(0:NUML-edge,ITER,PAR),-1,/double)
-                        ; The convolution of Response Functions
-                        D_SPECTRA(0:NUML-edge,ITER,PAR)=FFT(FFTD*FFTF,1,/double)*NUML
-                        D_SPECTRA(0:NUML-edge,ITER,PAR)=shift(D_SPECTRA(0:NUML-edge,ITER,PAR),-NUML/2)
-                    ENDIF
-                ENDFOR
-            ENDIF
         ENDFOR
     ENDELSE
 ENDIF
@@ -938,24 +703,23 @@ spectra(*) = 0
 D_SPECTRA=DBLARR(NUML,NTERMS*n_comp,4)
 
 if n_comp gt 1 then begin
-    if keyword_set(NLTE) then print,'NLTE NOT READY FOR MORE THAN 1 COMPONENT'
-    for k=0,n_comp-1 do begin
-        spectra = spectra + Spectra_comp(*,*,k)*fill_fractions(k)
-    endfor
-    ;la derivada no se suma!
-    for k=0,n_comp-1 do begin
-        D_SPECTRA(*,11*k:11*(k+1)-1,*) =  D_SPECTRA_comp(*,*,*,k)*fill_fractions(k)
-    endfor
-    ;Derivative with respefct fill fractions
-    if n_comp eq 2 then begin
-        D_SPECTRA(*,11+10,*) = Spectra_comp(*,*,1) - Spectra_comp(*,*,0)
-    endif else if n_comp gt 2 then begin
-        for k=0,n_comp-1 do D_SPECTRA(*,11*k+10,*) = Spectra_comp(*,*,k)
-    endif
+for k=0,n_comp-1 do begin
+spectra = spectra + Spectra_comp(*,*,k)*fill_fractions(k)
+endfor
+;la derivada no se suma!
+for k=0,n_comp-1 do begin
+    D_SPECTRA(*,11*k:11*(k+1)-1,*) =  D_SPECTRA_comp(*,*,*,k)*fill_fractions(k)
+endfor
+;Derivative with respefct fill fractions
+if n_comp eq 2 then begin
+  D_SPECTRA(*,11+10,*) = Spectra_comp(*,*,1) - Spectra_comp(*,*,0)
+endif else if n_comp gt 2 then begin
+  for k=0,n_comp-1 do D_SPECTRA(*,11*k+10,*) = Spectra_comp(*,*,k)
+endif
 
 endif else begin
-    spectra = Spectra_comp
-    d_spectra = D_SPECTRA_comp
+spectra = Spectra_comp
+d_spectra = D_SPECTRA_comp
 endelse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -998,8 +762,8 @@ If (D_N EQ 2) THEN BEGIN  ;ANALITIC RESPONSE FUNCTIONS
 SPECTRA_N = YFIT
 D_SPECTRA_N = PDER
 
-window,1,xsize=1400,ysize=400
-if keyword_set(nlte) then !p.multi=[0,15,4] else !p.multi=[0,11,4] 
+window,1
+!p.multi=[0,11,4]
 FOR J=0,nterms*n_comp-1 DO BEGIN
     PLOT,D_SPECTRA(*,j,0),TITLE='I'
     OPLOT,D_SPECTRA_N(*,j,0),line=2,thick=2
@@ -1022,7 +786,8 @@ FOR J=0,nterms*n_comp-1 DO BEGIN
     PLOT,D_SPECTRA(*,j,3),TITLE='V'
     OPLOT,D_SPECTRA_N(*,j,3),line=2,thick=2
 ENDFOR
-pause
+wait,1
+
 ENDIF ELSE If (D_N EQ 1) THEN BEGIN
 
   SPECTRA = YFIT

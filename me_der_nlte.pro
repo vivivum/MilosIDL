@@ -97,16 +97,7 @@ IF NOT(KEYWORD_SET(AC_RATIO)) THEN AC_RATIO=0D
 
 LINES = WL[0]
 
-IF KEYWORD_SET(NLTE) THEN BEGIN
-    ALPHA = PARAM[14] 
-    NPAR = 15
-    NTERMS = 15
-ENDIF ELSE BEGIN
-    ALPHA = PARAM[10]
-    NPAR = 11
-    NTERMS = 11
-ENDELSE
-
+NTERMS = 11
 RR = 5.641895836D-1
 CC = !DPI/180D  ; conversion factor to radians
 NUML = N_ELEMENTS(LMB)
@@ -116,7 +107,13 @@ SPECTRA = DBLARR(NUML,4)
 SPECTRA_COMP = DBLARR(NUML,4,N_COMP)
 VLIGHT = 2.99792458D+5   ; speed of light (cm/s)
 
-
+IF KEYWORD_SET(NLTE) THEN BEGIN
+    ALPHA = PARAM[14] 
+    NPAR = 15
+ENDIF ELSE BEGIN
+    ALPHA = PARAM[10]
+    NPAR = 11
+ENDELSE
 ;npar = 11 ;indice de nparams + 1 LTE
 ;npar = 15 ;indice de nparams + 1 NLTE
 
@@ -634,19 +631,19 @@ FOR ITER=0,6 DO BEGIN
                 DTI_NLTE2*D_EI[*,ITER]*GP3_NLTE2 + DTI_NLTE2*ETAI2_NLTE*DGP3_NLTE2)
 
 	D_SPECTRA(*,ITER,1)= D_SPECTRA(*,ITER,1) + $
-                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1) / DT_NLTE1^2. + $
+                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1) / DT_NLTE1^2. + 
                 DTI_NLTE1 * (DGP4_NLTE1 + D_RQ[*,ITER]*GP2_NLTE1 + RHOQ*DGP2_NLTE1) ) - $
                 A2 * (1+ap2*MU) * ( (-1.) * D_DT_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2)  / DT_NLTE2^2.+ $
                 DTI_NLTE2 * (DGP4_NLTE2 + D_RQ[*,ITER]*GP2_NLTE2 + RHOQ*DGP2_NLTE2) )
 
 	D_SPECTRA(*,ITER,2)= D_SPECTRA(*,ITER,2) + $
-                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1) / DT_NLTE1^2. + $
+                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1) / DT_NLTE1^2. + 
                 DTI_NLTE1 * (DGP5_NLTE1 + D_RU[*,ITER]*GP2_NLTE1 + RHOU*DGP2_NLTE1) ) - $
                 A2 * (1+ap2*MU) * ( (-1.) * D_DT_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2)  / DT_NLTE2^2.+ $
                 DTI_NLTE2 * (DGP5_NLTE2 + D_RU[*,ITER]*GP2_NLTE2 + RHOU*DGP2_NLTE2) )
 
 	D_SPECTRA(*,ITER,3)= D_SPECTRA(*,ITER,3) + $
-                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1) / DT_NLTE1^2. + $
+                A1 * ap1 * MU * ( (-1.) * D_DT_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1) / DT_NLTE1^2. + 
                 DTI_NLTE1 * (DGP6_NLTE1 + D_RV[*,ITER]*GP2_NLTE1 + RHOV*DGP2_NLTE1) ) - $
                 A2 * (1+ap2*MU) * ( (-1.) * D_DT_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2)  / DT_NLTE2^2.+ $
                 DTI_NLTE2 * (DGP6_NLTE2 + D_RV[*,ITER]*GP2_NLTE2 + RHOV*DGP2_NLTE2) )
@@ -664,8 +661,6 @@ D_SPECTRA(*,7,3)=0D0 & D_SPECTRA(*,8,3)=-DTI*(GP6+RHOV*GP2)*MU
 D_SPECTRA(*,6,0)=0D0  ;AZIMUTH STOKES I
 D_SPECTRA(*,6,3)=0D0  ;AZIMUTH STOKES V
 
-    IF keyword_set(NLTE) THEN BEGIN
-
 ;Response Functions with respect A1, A2, ap1, ap2 
 
 ;A1
@@ -673,30 +668,21 @@ D_SPECTRA(*,10,0) = (1d0 - ap1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1)
 D_SPECTRA(*,10,1) = ap1*MU*DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1)
 D_SPECTRA(*,10,2) = ap1*MU*DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1)
 D_SPECTRA(*,10,3) = ap1*MU*DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1)
+;ap1
+D_SPECTRA(*,11,0) = -A1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1
+D_SPECTRA(*,11,1) = A1*MU*DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1)
+D_SPECTRA(*,11,2) = A1*MU*DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1)
+D_SPECTRA(*,11,3) = A1*MU*DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1)
 ;A2
 D_SPECTRA(*,12,0) = -(1d0 - (1+ap2*MU)*DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2)
 D_SPECTRA(*,12,1) = -(1+ap2*MU)*DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2)
 D_SPECTRA(*,12,2) = -(1+ap2*MU)*DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2)
 D_SPECTRA(*,12,3) = -(1+ap2*MU)*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2)
-;NOT CORRECT.(BELOW) I RUN 11 and 13 NUMERICALLY
-;ap1 
-D_SPECTRA(*,11,0) = -A1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1 + $
-                     A1*ap1*MU*MU*(DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1)^2 
-D_SPECTRA(*,11,1) = -A1*MU*DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1) - $
-                     A1*ap1*MU*MU*(DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1))^2*ap1^2 
-D_SPECTRA(*,11,2) = -A1*MU*DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1) - $
-                     A1*ap1*MU*MU*(DTI_NLTE1*(GP5_NLTE1+RHOU*GP2_NLTE1))^2*ap1^2
-D_SPECTRA(*,11,3) = -A1*MU*DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1) - $
-                     A1*ap1*MU*MU*(DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1))^2*ap1^2
-;ap2     
-D_SPECTRA(*,13,0) = A2*MU*DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2 - $
-                    A2*(1+ap2*MU)*MU*(DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2)^2 
-D_SPECTRA(*,13,1) = A2*MU*DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2) - $
-                    A2*(1+ap2*MU)*MU*(DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2))^2                      
-D_SPECTRA(*,13,2) = A2*MU*DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2) - $
-                    A2*(1+ap2*MU)*MU*(DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2))^2 
-D_SPECTRA(*,13,3) = A2*MU*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2) - $
-                    A2*(1+ap2*MU)*MU*(DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2))^2 
+;ap2
+D_SPECTRA(*,13,0) = A2*MU*DTI_NLTE2*ETAI2_NLTE*GP3_NLTE2
+D_SPECTRA(*,13,1) = -A2*MU*DTI_NLTE2*(GP4_NLTE2+RHOQ*GP2_NLTE2)
+D_SPECTRA(*,13,2) = -A2*MU*DTI_NLTE2*(GP5_NLTE2+RHOU*GP2_NLTE2)
+D_SPECTRA(*,13,3) = -A2*MU*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2)
 
     ; SPECTRA(*,0)= SPECTRA(*,0) + $
     ;             A1*(1d0 - ap1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1) - $
@@ -710,28 +696,6 @@ D_SPECTRA(*,13,3) = A2*MU*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2) - $
     ; SPECTRA(*,3)= SPECTRA(*,3) + $
     ;             A1*ap1*MU*DTI_NLTE1*(GP6_NLTE1+RHOV*GP2_NLTE1) - $
     ;             A2*(1+ap2*MU)*DTI_NLTE2*(GP6_NLTE2+RHOV*GP2_NLTE2)
-
-;   mil_sinrf,PARAM,wl,lmb,yfit,triplet=triplet,slight=slight,filter=filter,$
-;   	        AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
-;   pder=DBLARR(N_ELEMENTS(LMB),N_ELEMENTS(PARAM),4)
-
-;goto,jum
-    H=0.001
-    PARAMN=PARAM
-    IP = [11,13]
-    FOR Ipc = 0,n_elements(IP)-1 do begin
-        IF (ABS(PARAM(IP[Ipc])) gt 1e-2) THEN PARAMN(IP[Ipc])=PARAM(IP[Ipc])*(1.+H) $
-            ELSE PARAMN(IP[Ipc])=PARAM(IP[Ipc])+H
-        mil_sinrf,PARAMn,wl,lmb,yfitD,triplet=triplet,slight=slight,filter=filter,$
-                AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
-        IF (ABS(PARAM(IP[Ipc])) gt 1e-2) THEN PARAMN(IP[Ipc])=PARAM(IP[Ipc])*(1.-H) $
-            ELSE PARAMN(IP[Ipc])=PARAM(IP[Ipc])-H
-        mil_sinrf,PARAMn,wl,lmb,yfitI,triplet=triplet,slight=slight,filter=filter,$
-                AC_RATIO=ac_ratio,n_comp=n_comp,crosst=crosst,nlte=nlte
-        FOR J=0,3 DO D_SPECTRA(*,IP[Ipc],J)=(YFITD(*,J)-YFITI(*,J))/(2.*(PARAM(IP[Ipc])-PARAMN(IP[Ipc])))
-    ENDFOR
-    jum:
-ENDIF
 
 ; CONVOLUTIONS WITH THE MACROTURBULENT VELOCITY AND THE INSTRUMENTAL PROFILE
 
@@ -938,7 +902,7 @@ spectra(*) = 0
 D_SPECTRA=DBLARR(NUML,NTERMS*n_comp,4)
 
 if n_comp gt 1 then begin
-    if keyword_set(NLTE) then print,'NLTE NOT READY FOR MORE THAN 1 COMPONENT'
+    if keyword_set(NLTE) print,'NLTE NOT READY FOR MORE THAN 1 COMPONENT'
     for k=0,n_comp-1 do begin
         spectra = spectra + Spectra_comp(*,*,k)*fill_fractions(k)
     endfor
@@ -998,8 +962,8 @@ If (D_N EQ 2) THEN BEGIN  ;ANALITIC RESPONSE FUNCTIONS
 SPECTRA_N = YFIT
 D_SPECTRA_N = PDER
 
-window,1,xsize=1400,ysize=400
-if keyword_set(nlte) then !p.multi=[0,15,4] else !p.multi=[0,11,4] 
+window,1
+!p.multi=[0,11,4]
 FOR J=0,nterms*n_comp-1 DO BEGIN
     PLOT,D_SPECTRA(*,j,0),TITLE='I'
     OPLOT,D_SPECTRA_N(*,j,0),line=2,thick=2
@@ -1022,7 +986,8 @@ FOR J=0,nterms*n_comp-1 DO BEGIN
     PLOT,D_SPECTRA(*,j,3),TITLE='V'
     OPLOT,D_SPECTRA_N(*,j,3),line=2,thick=2
 ENDFOR
-pause
+wait,1
+
 ENDIF ELSE If (D_N EQ 1) THEN BEGIN
 
   SPECTRA = YFIT

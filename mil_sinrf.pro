@@ -108,12 +108,15 @@ ENDELSE
 ;npar = 15 ;indice de nparams + 1 NLTE
 
 ;FILL fraction in NLTE not tested yet
-IF N_COMP EQ 2 then begin
+    FILL_FRACTIONS = FLTARR(N_COMP)
+;IF N_COMP EQ 2 then begin
+IF N_COMP GE 2 then begin
+    FILL_FRACTIONS = FLTARR(N_COMP)
     FILL_FRACTIONS[1:*] = PARAM[NPAR*(INDGEN(N_COMP-1)+1)+NPAR-1]
     FILL_FRACTIONS[0] = 1d0 - TOTAL(FILL_FRACTIONS[1:*])
-ENDIF ELSE IF n_comp gt 2 THEN BEGIN
-    FILL_FRACTIONS[1:*] = PARAM[NPAR*(INDGEN(N_COMP-1)+1)+NPAR-1]
-    FILL_FRACTIONS[0] = PARAM[NPAR-1]
+;ENDIF ELSE IF n_comp gt 2 THEN BEGIN
+;    FILL_FRACTIONS[1:*] = PARAM[NPAR*(INDGEN(N_COMP-1)+1)+NPAR-1]
+;    FILL_FRACTIONS[0] = PARAM[NPAR-1]
 ENDIF ELSE FILL_FRACTIONS = 1D
 
 FOR k = 0,N_COMP-1 DO BEGIN ;loop in components
@@ -399,12 +402,12 @@ ENDIF
 
     IF keyword_set(crosst) THEN BEGIN
         IF keyword_set(NLTE) THEN BEGIN
-            PRINT,'STOP NLTE incompatible with crosst'
-            RETURN
-        ENDIF
+            MatrixCrosst = [[1,0,0,0],[PARAM[15],1,0,0],[PARAM[16],0,1,0],[PARAM[17],0,0,1]]
+        ENDIF ELSE BEGIN
         ;assumes 1 component !!!! It uses param to add crosstalk values
         ;derivatives are numerically calculated!!!!!
-        MatrixCrosst = [[1,0,0,0],[PARAM[11],1,0,0],[PARAM[12],0,1,0],[PARAM[13],0,0,1]]
+            MatrixCrosst = [[1,0,0,0],[PARAM[11],1,0,0],[PARAM[12],0,1,0],[PARAM[13],0,0,1]]
+        ENDELSE
         FOR i=0,NUML-1 DO SPECTRA[i,*] = Matrixcrosst##SPECTRA[i,*]
     ENDIF
 

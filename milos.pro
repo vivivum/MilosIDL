@@ -284,7 +284,7 @@ IF KEYWORD_SET(NLTE) THEN BEGIN
 	NPAR = 15 
 ;	print,'In NLTE mode RFs are numerical, for the moment.';
 ;	print,'Setting numerical = 1'
-	numerical = 1
+;	numerical = 1
 ENDIF ELSE NPAR = 11
 ;npar = 11 ;indice de nparams + 1 LTE
 ;npar = 15 ;indice de nparams + 1 NLTE

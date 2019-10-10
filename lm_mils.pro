@@ -291,7 +291,13 @@ REPEAT BEGIN
     THEN CLANDA = 1 ;Stoping criteria
 
       ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10
-      flambda=flambda/(PARBETA_better*PARBETA_FACTOR)      
+                       if flambda gt 1.e-4 then begin
+                    flambda=0.1*flambda
+                 endif else	begin
+                    flambda=0.5*flambda
+                 endelse
+
+;      flambda=flambda/(PARBETA_better*PARBETA_FACTOR)      
             ;RNOISE_PROBLEM
 ;      IF FLAMBDA LT 1 THEN BEGIN
 ;      II = 1d0
@@ -333,8 +339,18 @@ REPEAT BEGIN
       iter_info.conv_crit[ITER] = 0.
 
       ;increase flambda by a factor 10
+                 if flambda le 1.e-3 then begin
+                    flambda=100.*flambda
+                 endif else begin
+                    if flambda lt 1.e3 then begin
+                       flambda=10.*flambda
+                    endif else	begin
+                       flambda=2.*flambda
+                    endelse
+                 endelse
 
-      flambda=flambda*PARBETA_worst*PARBETA_FACTOR
+;      flambda=flambda*PARBETA_worst*PARBETA_FACTOR
+
       ;RNOISE_PROBLEM
 ;      IF FLAMBDA LT 1 THEN BEGIN
 ;      II = 1d0

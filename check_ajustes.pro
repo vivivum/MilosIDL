@@ -1,12 +1,23 @@
-pro check_ajustes,data,landas,result,ch,landa,order=order,n_comp=n_comp,nlte=nlte
+pro check_ajustes,data,landas,result,ch,landa,order=order,$
+        n_comp=n_comp,nlte=nlte,zoom=zoom,color=color
 
 if not(keyword_set(n_comp)) then n_comp=1
+if not(keyword_set(order)) then order='xylp'
+if not(keyword_set(zoom)) then zoom=1
+if not(keyword_set(color)) then color=0
 case order of
   'xylp': begin
     p1 = 'plot,landas,data(x,y,*,0) ,/ynoz'
     p2 = 'plot,landas,data(x,y,*,1)'
     p3 = 'plot,landas,data(x,y,*,2)'
     p4 = 'plot,landas,data(x,y,*,3)'
+    s=size(result)
+    end
+  'xypl': begin
+    p1 = 'plot,landas,data(x,y,0,*) ,/ynoz'
+    p2 = 'plot,landas,data(x,y,1,*)'
+    p3 = 'plot,landas,data(x,y,2,*)'
+    p4 = 'plot,landas,data(x,y,3,*)'
     s=size(result)
     end
     'lxpy': begin
@@ -19,11 +30,10 @@ case order of
   else: print,'Fack'
 endcase
 
-zoom=1.
-loadct,4
+loadct,color
 s=size(result)
-window,0,xsize=s(1),ysize=s(2)
-tvscl,result(*,*,7)+result(*,*,8)
+window,0,xsize=s(1)*zoom,ysize=s(2)*zoom
+tvscl,congrid(result(*,*,7)+result(*,*,8),s(1)*zoom,s(2)*zoom),0
 window,1,xsize=500,ysize=500
 wset,0
 colores
@@ -75,7 +85,7 @@ while !mouse.button ne 4 do begin
         plots,/dev,[0,s(1)]*zoom,[y,y]*zoom
         device,set_graphics=3
  	    initi=reform(result(x,y,*))
-        milos, wl,landas,initi, pr,/synthesis,n_comp=n_comp
+        milos, wl,landas,initi, pr,/synthesis,n_comp=n_comp,nlte=nlte
   	    xlast=x
         wset,1
         colores
@@ -143,7 +153,7 @@ while !mouse.button ne 4 do begin
         tvscl,congrid(result(*,*,2),s(1)*zoom,s(2)*zoom),0
         device,set_graphics=6
 	endcase
-  else: print,'nothing'
+  else: aa=0;print,'nothing'
 endcase
 
     if !mouse.button eq 2 then begin
