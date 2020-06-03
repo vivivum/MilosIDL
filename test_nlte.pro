@@ -150,7 +150,7 @@ Magnet=1500.
 GAMMA=60.
 AZI=0.
 vlos=0.  ;km/s
-MACRO=0.
+MACRO=3.
 LANDADOPP=0.09
 aa=0.05
 alfa=0.
@@ -167,7 +167,7 @@ Init_landa=Wl(1)-0.4
 step=5d0
 Points=150.
 STEP=STEP/1000d0
-axis=Init_landa+Dindgen(Points)*step
+axis=Init_landa+findgen(Points)*step
 
 milos, Wl, axis, init_model, y3, /synthesis, /doplot, /nlte
 Init_model[12:13] = 0
@@ -216,8 +216,8 @@ pause
 PRINT,''
 
 INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,A1,ap1,A2,ap2,alfa]
-milos, Wl, axis, init_model, y1, rfs=rfs1, /doplot,/nlte,numerical=1
-milos, Wl, axis, init_model, y2, rfs=rfs2, /doplot,/nlte,numerical=0
+milos, Wl, axis, init_model, y1, rfs=rfs1, /doplot,/nlte,numerical=0
+milos, Wl, axis, init_model, y2, rfs=rfs2, /doplot,/nlte,numerical=1
 
 ; window,0,xsize=2000,ysize=800
 ; !p.multi=[0,15,4]
@@ -238,15 +238,43 @@ FOR I = 0,3 DO begin
     oPLOT,rfs2(*,j,i),line=2,thick=2,color=2
   endfor
 endfor
+window,3
+!p.multi=[0,4,4]
+FOR I = 0,3 DO begin
+  FOR J=10,13 DO BEGIN
+    PLOT,rfs1(*,j,i)-rfs2(*,j,i),TITLE='RFS to '+strtrim(string(J),1),charsize=2
+  endfor
+endfor
+window,4
+!p.multi=[0,4,4]
+FOR I = 0,3 DO begin
+  FOR J=0,3 DO BEGIN
+    PLOT,rfs1(*,j,i)-rfs2(*,j,i),TITLE='RFS to '+strtrim(string(J),1),charsize=2
+  endfor
+endfor
+window,5
+!p.multi=[0,4,4]
+FOR I = 0,3 DO begin
+  FOR J=4,7 DO BEGIN
+    PLOT,rfs1(*,j,i)-rfs2(*,j,i),TITLE='RFS to '+strtrim(string(J),1),charsize=2
+  endfor
+endfor
+window,6
+!p.multi=[0,4,4]
+FOR I = 0,3 DO begin
+  FOR J=8,11 DO BEGIN
+    PLOT,rfs1(*,j,i)-rfs2(*,j,i),TITLE='RFS to '+strtrim(string(J),1),charsize=2
+  endfor
+endfor
 
-stop
+pause
 
 milos, Wl, axis, init_model, y, rfs=rfs, /doplot,/nlte,numerical=2
 
-stop
-
 PRINT,'CHECK RFSs NLTE'
 pause
+
+INVS:
 
 OLD=INIT_MODEL
 ;Init model inversion
@@ -256,7 +284,7 @@ Magnet=100.
 GAMMA=90.
 AZI=60.
 vlos=0.25  ;km/s
-MACRO=0.
+MACRO=3.
 LANDADOPP=0.01
 aa=0.03
 alfa=0.
@@ -264,17 +292,29 @@ A1 = 0.8
 A2 = 0.8
 ap1 = 2.
 ap2 = 8.
-INIT_MODEL=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,A1,ap1,A2,ap2,alfa]
+INIT=[eta0,magnet,vlos,landadopp,aa,gamma,azi,B1,B2,macro,A1,ap1,A2,ap2,alfa]
 ;A1 = 4.*0.2
 ;A2 = 4.*0.2
 ;ap1 = 5.
 ;ap2 = 10.
 
-fix=[1.,1.,1.,1.,1.,1.,1.,1.,1.,0., 0.,1.,0.,1., 0.]
-weight=[1.,10.,10.,1.]
+fix=[1.,1.,1.,1.,1.,1.,1.,1.,1.,0.,1.,1.,1.,1., 0.]
+weight=[1.,1.,1.,1.]
 
-milos, wl, axis, init_model, y, yfit=yfit,$
-  fix=fix,/inversion,miter=100,noise=1.d-3,/doplot,ilambda=10.,toplim=1e-25,/nlte
+;TIC,/PROFILER
+init_model = init
+milos, wl, axis, init_model, y, yfit=yfit,fix=fix,/inversion,miter=150,/doplot,ilambda=1.,/nlte,iter_info=into1,TOPLIM=1e-5,numerical=1
+init_model = init
+milos, wl, axis, init_model, y, yfit=yfit,fix=fix,/inversion,miter=150,/doplot,ilambda=10.,/nlte,iter_info=into2,TOPLIM=1e-5
+init_model = init
+milos, wl, axis, init_model, y, yfit=yfit,fix=fix,/inversion,miter=150,/doplot,ilambda=100.,/nlte,iter_info=into2,TOPLIM=1e-5
+;TOC
+;PROFILER, /REPORT, /CODE_COVERAGE
+
+!p.multi=0
+colores
+plot,into1.CHISQR,/ylog,thick=2
+oplot,into2.chisqr,color=2,thick=2
 
 Print,'Old model:' , OLD
 Print,'New model:' , init_model

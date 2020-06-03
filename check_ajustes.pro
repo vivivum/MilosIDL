@@ -101,7 +101,7 @@ while !mouse.button ne 4 do begin
         print,'x: ',text(x),' y: ',text(y)
         print,'B (B): ',text(result(x,y,1)),' Inc (G): ',text(result(x,y,5)),' Azi (A): ',text(result(x,y,6)),' Vdop (D): ',text(result(x,y,3))
         print, 'damp: (T)',text(result(x,y,4)),' eta0 (H): ',text(result(x,y,0)),' VLOS (V): ',text(result(x,y,2)),' CHISQR (I): ',text(ch(x,y))
-        print, 'A1: (E)',text(result(x,y,10)),' appha1 (R): ',text(result(x,y,11)),' A2 (T): ',text(result(x,y,12)),' alpha2: (Y)',text(result(x,y,13))
+        ;print, 'A1: (E)',text(result(x,y,10)),' appha1 (R): ',text(result(x,y,11)),' A2 (T): ',text(result(x,y,12)),' alpha2: (Y)',text(result(x,y,13))
         xb=x & yb=y
         loadct,4,/silent
         wset,0
@@ -121,7 +121,7 @@ while !mouse.button ne 4 do begin
 	endcase
 'B':	begin
         device,set_graphics=3
-        tvscl,congrid(result(*,*,1),s(1)*zoom,s(2)*zoom),0
+        tvscl,congrid(result(*,*,1),s(1)*zoom,s(2)*zoom)<300,0
         device,set_graphics=6
 	endcase
 'H':	begin

@@ -52,9 +52,9 @@ PRO COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,CHISQR,drho=dhro
 if not(keyword_set(dhro)) then begin
 
   for I=0,3 do begin
-    BT(*,I) = (W(*,I)*(YFIT(*,I)-STOKESPROF(*,I))#PDER(*,*,I))/SIG(I)^2d0
+    BT(*,I) = (W(*,I)*(YFIT(*,I)-STOKESPROF(*,I))#PDER(*,*,I))/SIG(I)^2
     AP(*,*,I)=(TRANSPOSE(PDER(*,*,I))#(W(*,I)$
-      #UNOS*PDER(*,*,I)))/SIG(I)^2d0
+      #UNOS*PDER(*,*,I)))/SIG(I)^2
   endfor
 
 endif else begin
@@ -69,6 +69,6 @@ endif else begin
 
   BETA = TOTAL(BT,2,/double)
   ALPHA = TOTAL(AP,3,/double)
-  CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
+  CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2*W,1,/double)/SIG^2,/double)/NFREE
 
 END

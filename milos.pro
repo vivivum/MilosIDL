@@ -209,8 +209,8 @@
 ;   Added two components in Nov. 2011. DOS
 ;   Added numerical derivatives in Dec. 2011. DOS
 ;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
-;   Added keyword LOGCLAMBDA in Dec 2016 DOS
 ;   Added keyword NLTE in Jul 2019 and modified program to deal with nlte DOS
+;   Removed loglambda. Added OTHERS and CHISQR_LIMIT, Dec 2019
 ;-
 ; Original MILOS, Copyright (C) 2004-2011,  D. Orozco Suarez
 ; This software is provided as is without any warranty whatsoever.
@@ -228,10 +228,11 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
     FILTER=filter,NOISE=noise,POL=pol,GETSHI=getshi,DOPLOT=doplot,MU=mu,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
-    use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,LOGCLAMBDA = LOGCLAMBDA,$
-    nlte=nlte
+    use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,$
+    nlte=nlte;,CHISQR_LIMIT=CHISQR_LIMIT
 
 COMMON QUANTIC,C_N
+PRT = keyword_set(QUIET)
 
 ;Error handling
 ;on_error,2
@@ -279,15 +280,11 @@ if (wli(0) gt c2(1)) or (wli(0) gt n_elements(wli)-1) then begin
 endif
 
 if not(keyword_set(n_components)) then n_comp=1 else n_comp = n_components
-if not(KEYWORD_SET(LOGCLAMBDA)) then LOGCLAMBDA = 0
+if not(PRT) then print,'Number of components: ',n_comp
 IF KEYWORD_SET(NLTE) THEN BEGIN
 	NPAR = 15 
-;	print,'In NLTE mode RFs are numerical, for the moment.';
-;	print,'Setting numerical = 1'
-;	numerical = 1
+	if not(PRT) then print,'NLTE mode'
 ENDIF ELSE NPAR = 11
-;npar = 11 ;indice de nparams + 1 LTE
-;npar = 15 ;indice de nparams + 1 NLTE
 
 ;MODEL has to be 11*c elements vector
 ;MODEL in NLTE case has to be 15*c
@@ -306,78 +303,75 @@ endif
 ; Synthesis of the Stokes profiles without calculating response functions
 ; -----------------------------------------------------------------------
 
-  if keyword_set(synthesis) then begin
-	
-    mil_sinrf,model,wli,AXIS,STOKESPROF,TRIPLET=triplet,SLIGHT=slight,$
-    FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP = n_comp,ipbs=ipbs,crosst=crosst,nlte=nlte
+if keyword_set(synthesis) then begin
+	if not(PRT) then print,'Synthesizing profile.....'
 
-  if keyword_set(doplot) then begin
-    !p.multi=[0,2,2]
-    plot,AXIS,STOKESPROF(*,0),thick=2,title='I/Ic'
-    plot,AXIS,STOKESPROF(*,3),thick=2,title='V/Ic'
-    plot,AXIS,STOKESPROF(*,1),thick=2,title='Q/Ic'
-    plot,AXIS,STOKESPROF(*,2),thick=2,title='U/Ic'
-  endif
+	mil_sinrf,model,wli,AXIS,STOKESPROF,TRIPLET=triplet,SLIGHT=slight,$
+	FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP = n_comp,ipbs=ipbs,crosst=crosst,nlte=nlte
 
-; -----------------------------------------------------------------------
-; Inversion of Stokes profiles
-; -----------------------------------------------------------------------
+	if keyword_set(doplot) then begin
+		!p.multi=[0,2,2]
+		plot,AXIS,STOKESPROF(*,0),thick=2,title='I/Ic'
+		plot,AXIS,STOKESPROF(*,3),thick=2,title='V/Ic'
+		plot,AXIS,STOKESPROF(*,1),thick=2,title='Q/Ic'
+		plot,AXIS,STOKESPROF(*,2),thick=2,title='U/Ic'
+	endif
 
-  endif else if keyword_set(inversion) then begin
+	; -----------------------------------------------------------------------
+	; Inversion of Stokes profiles
+	; -----------------------------------------------------------------------
 
- IF NOT(KEYWORD_SET(fix)) then begin
-    if NPAR eq 11 then pn = [1,0,1,1,1,0,0,1,1,0,1] else pn = [1,0,1,1,1,0,0,1,1,0,0,0,0,0,1] 
- 	fix = fltarr(npar*n_comp)
- 	fix[0:8] = 1d0
- 	if n_comp gt 1 then for i=1, n_comp-1 do fix[indgen(NPAR)+i*NPAR] = pn
- endif else begin
-    cc = size(fix)
-    if ((cc(0) ne 1) or (cc(1) ne NPAR*n_comp)) and (NOT(KEYWORD_SET(crosst))) then begin
- 	print,'error in fix par'
- 	return
- 	endif
- endelse
-; print,' '
-; print,' --------------------- FIX  PARAMETERS ---------------------------------------'
-; print,'  -> 1 means being free 0 fixed'
-; print,fix
-; print,' -----------------------------------------------------------------------------'
-; print,' '
+endif else if keyword_set(inversion) then begin
+	if not(PRT) then print,'Inverting profile.....'
 
-;AXIS and STOKESPROF has to be same column dimension
-c1 = size (AXIS)
-c2 = size (STOKESPROF)
-if (c1(1) ne c2(1)) or (c2(2) ne 4) then begin
-	print,' '
-	print,' --------------------- INPUT  ERROR ------------------------------------------'
-	print,' Input parameters AXIS and STOKESPROF do not have the correct dimensions      '
-	print,'    Required: AXIS -> Array ( wavelength samples )                            '
-	print,'    Required: STOKESPROF -> Array ( wavelength samples , 4 )                  '
-	print,'    Current input: AXIS -> Array ( ' , c1(1) , ' ) '
-	print,'    Current input: STOKESPROF -> Array ( ' , c2(1) , ' , ' , c2(2) , ' ) '
-	print,' -----------------------------------------------------------------------------'
-	print,' '
-	return
-endif
+	IF NOT(KEYWORD_SET(fix)) then begin
+		if NPAR eq 11 then pn = [1,0,1,1,1,0,0,1,1,0,1] else pn = [1,0,1,1,1,0,0,1,1,0,0,0,0,0,1] 
+		fix = fltarr(npar*n_comp)
+		fix[0:8] = 1d0
+		if n_comp gt 1 then for i=1, n_comp-1 do fix[indgen(NPAR)+i*NPAR] = pn
+		if not(PRT) then print,'Fix parameters..... ',pn,'-> 1 means being free 0 fixed'
+	endif else begin
+		cc = size(fix)
+		if ((cc(0) ne 1) or (cc(1) ne NPAR*n_comp)) and (NOT(KEYWORD_SET(crosst))) then begin
+			print,'error in fix par'
+			return
+		endif
+	endelse
 
-if keyword_set(slight) then begin
-c3 = size (SLIGHT)
-if (c2(1) ne c3(1)) or (c2(2) ne c3(2) and (c3(0) ne 1)) then begin
-	print,' '
-	print,' --------------------- INPUT  ERROR ------------------------------------------'
-	print,' Input parameters SLIGHT and STOKESPROF do not have the same dimensions      '
-	print,'    Required: SLIGHT -> Array ( wavelength samples , 4)                            '
-	print,'    Required: STOKESPROF -> Array ( wavelength samples , 4 )                  '
-	print,'    Current input: SLIGHT -> Array ( ' , c3(1) , ' , ' , c3(2) , ' ) '
-	print,'    Current input: STOKESPROF -> Array ( ' , c2(1) , ' , ' , c2(2) , ' ) '
-	print,' -----------------------------------------------------------------------------'
-	print,' '
-	return
-endif
-endif
+	;AXIS and STOKESPROF has to be same column dimension
+	c1 = size (AXIS)
+	c2 = size (STOKESPROF)
+	if (c1(1) ne c2(1)) or (c2(2) ne 4) then begin
+		print,' '
+		print,' --------------------- INPUT  ERROR ------------------------------------------'
+		print,' Input parameters AXIS and STOKESPROF do not have the correct dimensions      '
+		print,'    Required: AXIS -> Array ( wavelength samples )                            '
+		print,'    Required: STOKESPROF -> Array ( wavelength samples , 4 )                  '
+		print,'    Current input: AXIS -> Array ( ' , c1(1) , ' ) '
+		print,'    Current input: STOKESPROF -> Array ( ' , c2(1) , ' , ' , c2(2) , ' ) '
+		print,' -----------------------------------------------------------------------------'
+		print,' '
+		return
+	endif
 
-;SET PLIMITS
-  index = indgen(n_comp)*npar
+	if keyword_set(slight) then begin
+		c3 = size (SLIGHT)
+		if (c2(1) ne c3(1)) or (c2(2) ne c3(2) and (c3(0) ne 1)) then begin
+			print,' '
+			print,' --------------------- INPUT  ERROR ------------------------------------------'
+			print,' Input parameters SLIGHT and STOKESPROF do not have the same dimensions      '
+			print,'    Required: SLIGHT -> Array ( wavelength samples , 4)                            '
+			print,'    Required: STOKESPROF -> Array ( wavelength samples , 4 )                  '
+			print,'    Current input: SLIGHT -> Array ( ' , c3(1) , ' , ' , c3(2) , ' ) '
+			print,'    Current input: STOKESPROF -> Array ( ' , c2(1) , ' , ' , c2(2) , ' ) '
+			print,' -----------------------------------------------------------------------------'
+			print,' '
+			return
+		endif
+	endif
+
+	;SET PLIMITS
+  	index = indgen(n_comp)*npar
 	PLIMITS = replicate( {set:0, limits:[0d0,0d0]} , npar* n_comp) ;define variable plimits
 	PLIMITS[*].SET = 1  ; Activate all limits
 	PLIMITS[index].LIMITS = [1d0,2500d0]  ; Eta0
@@ -400,26 +394,26 @@ endif
 		PLIMITS[index+13].LIMITS = [-10d0,50d0]  ; NLTE  
 	endelse
 
-if keyword_set(PARLIMITS) then begin
-	Sz = size(PARLIMITS)
-	if Sz(1) ne 4 then begin
-		print,' '
-		print,' --------------------- INPUT  ERROR -----------------------------'
-		print,' Input parameter PARLIMITS does not have the correct dimensions      '
-		print,'    Required: Array ( 4 )                                       '
-		print,'    Current input: Array ( ' , c1(1) , ' ) '
-		print,' ----------------------------------------------------------------'
-		print,' '
-		return
-	endif
-	check_size = Size(PARLIMITS)
-  If check_size(0) eq 1 then Howmany = 1 else Howmany = check_size(2)
-	FOR i=0, howmany -1 do begin
-		PLIMITS[PARLIMITS(0,i)].LIMITS = [ PARLIMITS(2,i) ,  PARLIMITS(3,i) ]
-		PLIMITS[PARLIMITS(0,i)].SET = PARLIMITS(1,i)
-	ENDFOR
-
-ENDIF
+	if keyword_set(PARLIMITS) then begin
+		Sz = size(PARLIMITS)
+		if Sz(1) ne 4 then begin
+			print,' '
+			print,' --------------------- INPUT  ERROR -----------------------------'
+			print,' Input parameter PARLIMITS does not have the correct dimensions      '
+			print,'    Required: Array ( 4 )                                       '
+			print,'    Current input: Array ( ' , c1(1) , ' ) '
+			print,' ----------------------------------------------------------------'
+			print,' '
+			return
+		endif
+		check_size = Size(PARLIMITS)
+		If check_size(0) eq 1 then Howmany = 1 else Howmany = check_size(2)
+		FOR i=0, howmany -1 do begin
+			PLIMITS[PARLIMITS(0,i)].LIMITS = [ PARLIMITS(2,i) ,  PARLIMITS(3,i) ]
+			PLIMITS[PARLIMITS(0,i)].SET = PARLIMITS(1,i)
+			if not(PRT) then print,'PARLIMITS set: ',PARLIMITS(0,i)
+		ENDFOR
+	ENDIF
 
     VLIMITS = replicate( {set:0, limits:[0d0,0d0]} , npar* n_comp) ;define variable vlimits
     VLIMITS[index+1].SET = 1
@@ -432,82 +426,82 @@ ENDIF
     VLIMITS[index+9].LIMITS = [-1d0,1d0] ;MACRO
 	IF NPAR eq 15 then begin
 		VLIMITS[index+10].SET = 1
-		VLIMITS[index+10].LIMITS = [-1d0,1d0] ;A1
+		VLIMITS[index+10].LIMITS = [-100d0,100d0] ;A1
 		VLIMITS[index+11].SET = 1
-		VLIMITS[index+11].LIMITS = [-1d0,1d0] ;ap1
+		VLIMITS[index+11].LIMITS = [-100d0,100d0] ;ap1
 		VLIMITS[index+12].SET = 1
-		VLIMITS[index+12].LIMITS = [-1d0,1d0] ;A2
+		VLIMITS[index+12].LIMITS = [-100d0,100d0] ;A2
 		VLIMITS[index+13].SET = 1
-		VLIMITS[index+13].LIMITS = [-1d0,1d0] ;AP2
+		VLIMITS[index+13].LIMITS = [-100d0,100d0] ;AP2
 	ENDIF
 
-if keyword_set(VARLIMITS) then begin
-	Sz = size(VARLIMITS)
-	if Sz(1) ne 4 then begin
-		print,' '
-		print,' --------------------- INPUT  ERROR -----------------------------'
-		print,' Input parameter VARLIMITS does not have the correct dimensions      '
-		print,'    Required: Array ( 4 )                                       '
-		print,'    Current input: Array ( ' , c1(1) , ' ) '
-		print,' ----------------------------------------------------------------'
-		print,' '
-		return
+	if keyword_set(VARLIMITS) then begin
+		Sz = size(VARLIMITS)
+		if Sz(1) ne 4 then begin
+			print,' '
+			print,' --------------------- INPUT  ERROR -----------------------------'
+			print,' Input parameter VARLIMITS does not have the correct dimensions      '
+			print,'    Required: Array ( 4 )                                       '
+			print,'    Current input: Array ( ' , c1(1) , ' ) '
+			print,' ----------------------------------------------------------------'
+			print,' '
+			return
+		endif
+		check_size = Size(VARLIMITS)
+		If check_size(0) eq 1 then Howmany = 1 else Howmany = check_size(2)
+		FOR i=0, howmany -1 do begin
+			VLIMITS[VARLIMITS(0,i)].LIMITS = [ VARLIMITS(2,i) ,  VARLIMITS(3,i) ]
+			VLIMITS[VARLIMITS(0,i)].SET = VARLIMITS(1,i)
+			if not(PRT) then print,'VARLIMITS set: ',VARLIMITS(0,i)
+		ENDFOR
+
+	ENDIF
+	
+    LM_MILS,Wli, AXIS, STOKESPROF, MODEL, YFIT, ERR,CHISQR,ITER,SLIGHT=SLIGHT,TOPLIM=toplim,$
+		TRIPLET=triplet,QUIET=quiet,MITER=miter,WEIGHT=weight,FIX=fix,SIGMA=sigma,$
+		FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,GETSHI=getshi,MU=mu,PLIMITS=plimits,$
+		VLIMITS=vlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
+		iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,$
+		OTHERS = OTHERS,nlte=nlte;,CHISQR_LIMIT=CHISQR_LIMIT
+
+	if keyword_set(doplot) then begin
+		!p.multi=[0,2,2]
+		plot,AXIS,STOKESPROF(*,0),thick=2,title='I/Ic',/ynoz
+		oplot,AXIS,yfit(*,0),thick=3,color=4,line=2 
+		plot,AXIS,STOKESPROF(*,3),thick=2,title='V/Ic'
+		oplot,AXIS,yfit(*,3),thick=3,color=4,line=2
+		plot,AXIS,STOKESPROF(*,1),thick=2,title='Q/Ic'
+		oplot,AXIS,yfit(*,1),thick=3,color=4,line=2
+		plot,AXIS,STOKESPROF(*,2),thick=2,title='U/Ic'
+		oplot,AXIS,yfit(*,2),thick=3,color=4,line=2
 	endif
-	check_size = Size(VARLIMITS)
-	If check_size(0) eq 1 then Howmany = 1 else Howmany = check_size(2)
-	FOR i=0, howmany -1 do begin
-		VLIMITS[VARLIMITS(0,i)].LIMITS = [ VARLIMITS(2,i) ,  VARLIMITS(3,i) ]
-		VLIMITS[VARLIMITS(0,i)].SET = VARLIMITS(1,i)
-	ENDFOR
-
-ENDIF
-
-    LM_MILS,Wli, AXIS, STOKESPROF, MODEL, YFIT, ERR,$
-      CHISQR,ITER,SLIGHT=SLIGHT,TOPLIM=toplim,$
-      TRIPLET=triplet,QUIET=quiet,MITER=miter,$
-      WEIGHT=weight,FIX=fix,SIGMA=sigma,$
-      FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,$
-	  GETSHI=getshi,MU=mu,PLIMITS=plimits,VLIMITS=vlimits,$
-	  AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
-	  iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,$
-      LOGCLAMBDA = LOGCLAMBDA,nlte=nlte
-
-  if keyword_set(doplot) then begin
-    !p.multi=[0,2,2]
-    plot,AXIS,STOKESPROF(*,0),thick=2,title='I/Ic',/ynoz
-    oplot,AXIS,yfit(*,0),thick=3,color=4,line=2 
-    plot,AXIS,STOKESPROF(*,3),thick=2,title='V/Ic'
-    oplot,AXIS,yfit(*,3),thick=3,color=4,line=2
-    plot,AXIS,STOKESPROF(*,1),thick=2,title='Q/Ic'
-    oplot,AXIS,yfit(*,1),thick=3,color=4,line=2
-    plot,AXIS,STOKESPROF(*,2),thick=2,title='U/Ic'
-    oplot,AXIS,yfit(*,2),thick=3,color=4,line=2
-  endif
 
 ; -----------------------------------------------------------------------
 ; Synthesis of the Stokes profiles and of the response functions (derivatives for inversion)
 ; -----------------------------------------------------------------------
 
-  endif else if ARG_PRESENT(RFS) then begin
+endif else if ARG_PRESENT(RFS) then begin
+	if not(PRT) then print,'Calculating RFs.....'
 
     ME_DER,MODEL,WLI,AXIS,STOKESPROF,RFS,TRIPLET=triplet,ipbs=ipbs,$
     	SLIGHT=slight,FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,$
 		numerical=numerical,crosst=crosst,nlte=nlte
 
-  if keyword_set(doplot) then begin
-    !p.multi=[0,2,2]
-    plot,AXIS,STOKESPROF(*,0),thick=2,title='I/Ic',/ynoz
-    plot,AXIS,STOKESPROF(*,3),thick=2,title='V/Ic'
-    plot,AXIS,STOKESPROF(*,1),thick=2,title='Q/Ic'
-    plot,AXIS,STOKESPROF(*,2),thick=2,title='U/Ic'
-  endif
+	if keyword_set(doplot) then begin
+		!p.multi=[0,2,2]
+		plot,AXIS,STOKESPROF(*,0),thick=2,title='I/Ic',/ynoz
+		plot,AXIS,STOKESPROF(*,3),thick=2,title='V/Ic'
+		plot,AXIS,STOKESPROF(*,1),thick=2,title='Q/Ic'
+		plot,AXIS,STOKESPROF(*,2),thick=2,title='U/Ic'
+	endif
 
-  endif else begin
+endif else begin
 
 	print,'no option has been set: /inversion, /synthesis, or rfs = rfs'
-
 	return
 
-  endelse
+endelse
+
+if not(PRT) then print,'All done.....'
 
 end

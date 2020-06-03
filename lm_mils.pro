@@ -147,247 +147,203 @@
 ;   Added keywork VLIMITS=vlimits to constraint Delta. 27 Feb, 2009. DOS
 ;   Added local straylight weight in merit function (See A. Asensio Ramos 2010) Aug, 2011. DOS
 ;   Added two components in Nov. 2011. DOS
-;   Added keyword NLTE in Jul 2019 and modified program to deal with nlte DOS
+;   Added keyword NLTE in Jul-Dec 2019 and modified program to deal with nlte DOS
 ;-
 
 pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,toplim=toplim,$
     triplet=triplet, QUIET=quiet,miter=miter, weight=weight,fix=fix,sigma=sigma,$
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
-	PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
-	N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
-  ipbs=ipbs,crosst = crosst,LOGCLAMBDA=LOGCLAMBDA,nlte=nlte
+	  PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
+	  N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
+    ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT
 
-; Enviromental parameters
-  prt = keyword_set(QUIET)
-  if not(keyword_set(miter)) then miter=50  ; Maximum number of iterations
-  if not(keyword_set(ilambda)) then ilambda=0.1D0;0.1d0 ; Assumes close to global minimum
-  if not(keyword_set(toplim)) then toplim=1D-12 ; Very low, It may stop by MITER
-;  if not(keyword_set(slight)) then print,'No stray light';slight=0 ; No stray light
-;  if not(keyword_set(filter)) then print,'No inst. filter profile'
-  if not(prt) then print,'triplet='+string(keyword_set(triplet))
-  if not(prt) then print,'Iterations='+string(miter)
-  if not(keyword_set(noise)) then noise=1D-3 ; Default noise level
-  if not(keyword_set(n_comp)) then n_comp=1D0  ; Maximum number of iterations
+    ; Enviromental parameters
+    prt = keyword_set(QUIET)
+    if not(keyword_set(miter)) then miter=50  ; Maximum number of iterations
+    if not(keyword_set(ilambda)) then ilambda=10D0;0.1d0 ; Assumes close to global minimum
+    if not(keyword_set(toplim)) then toplim=1D-12 ; Very low, It may stop by MITER
+    if not(keyword_set(CHISQR_LIMIT)) then CHISQR_LIMIT=1D-12 ; Very low, It may stop by MITER
+    ; if not(keyword_set(slight)) then print,'No stray light';slight=0 ; No stray light
+    ; if not(keyword_set(filter)) then print,'No inst. filter profile'
+    if not(prt) then print,'triplet='+string(keyword_set(triplet))
+    if not(prt) then print,'Iterations='+string(miter)
+    if not(keyword_set(noise)) then noise=1D-3 ; Default noise level
+    if not(keyword_set(n_comp)) then n_comp=1D0  ; Maximum number of iterations
+    IF KEYWORD_SET(NLTE) THEN NPAR = 15 ELSE NPAR = 11
 
-  IF KEYWORD_SET(NLTE) THEN NPAR = 15 ELSE NPAR = 11
+    NTERMS = N_ELEMENTS(P_I)*1D0
+    NFIXSS = TOTAL(FIX)
+    FLAMBDA = ILAMBDA   ; Initial fudge parameter
+    DIAG = INDGEN(NTERMS)*(NTERMS+1) ;SUBSCRIPTS OF DIAGONAL ELEMENTS
+    FIXED = FIX*1D0
+    NAXIS = N_ELEMENTS(AXIS)
+    VALID = WHERE(STOKESPROF ne 0.,HAY) ; If Y = 0 then the samples are not valid (e.g. blends)
+    NFREE = (N_ELEMENTS(VALID)-NFIXSS)*1D0  ; Number of degrees of freedom
+    NPOINTS = (SIZE(STOKESPROF))(1)
+    ITER_INFO = {lmb:dblarr(miter+1),iter:0,citer:0,conv_crit:dblarr(miter+1),$
+                Params_stored:dblarr(nterms,miter+1),CHISQR:dblarr(miter+1)}
 
-  NTERMS = N_ELEMENTS(P_I)*1D0
-  NFIXSS = TOTAL(FIX)
-  FLAMBDA = ILAMBDA   ; Initial fudge parameter
-  DIAG = INDGEN(NTERMS)*(NTERMS+1) ;SUBSCRIPTS OF DIAGONAL ELEMENTS
-  FIXED = FIX*1D0
-  NAXIS = N_ELEMENTS(AXIS)
-  VALID = WHERE(STOKESPROF ne 0.,HAY) ; If Y = 0 then the samples are not valid (e.g. blends)
-  NFREE = (N_ELEMENTS(VALID)-NFIXSS)*1D0  ; Number of degrees of freedom
-  NPOINTS = (SIZE(STOKESPROF))(1)
-  ITER_INFO = {lmb:dblarr(miter+1),iter:0,citer:0,conv_crit:dblarr(miter+1),$
-               Params_stored:dblarr(nterms,miter+1),CHISQR:dblarr(miter+1)}
+    if NFREE le 0 then begin
+        PRINT,'Not enough points'
+        STOP
+        RETURN
+    endif
+    P_M = DBLARR(NTERMS) ;New model aprameters
 
-  if NFREE le 0 then begin
-	     PRINT,'Not enough points'
-       STOP
-       RETURN
-  endif
-  P_M = DBLARR(NTERMS) ;New model aprameters
+    goodc = 0
 
-  goodc = 0
+    ;TO BE IMPLEMENTED
+    ;   ;INITIALIZATION
+    ;   p_i(6)=atan(max(STOKESPROF(*,1))/max(STOKESPROF(*,2)))/2.*180/!dpi
+    ;   signo=total(STOKESPROF(0:NPOINTS/2,3))-total(STOKESPROF(NPOINTS/2+1:*,3))
+    ;   if signo lt 0 then p_i(5)=100. else p_i(5)=10.
 
-  ;TO BE IMPLEMENTED
-  ;   ;INITIALIZATION
-  ;   p_i(6)=atan(max(STOKESPROF(*,1))/max(STOKESPROF(*,2)))/2.*180/!dpi
-  ;   signo=total(STOKESPROF(0:NPOINTS/2,3))-total(STOKESPROF(NPOINTS/2+1:*,3))
-  ;   if signo lt 0 then p_i(5)=100. else p_i(5)=10.
+    ;INITIALIZING WEIGHTS
+    WEIGHTS_INIT,NAXIS,STOKESPROF,W,SIG,WEIGHT=WEIGHT,SIGMA=SIGMA,NOISE=NOISE
 
-  ;INITIALIZING WEIGHTS
-  WEIGHTS_INIT,NAXIS,STOKESPROF,W,SIG,WEIGHT=WEIGHT,SIGMA=SIGMA,NOISE=NOISE
+    CLANDA = 0 ;SOME DEFINITIONS TO CONTROL THE FUDGE PARAMETER
+    ITER = 0  ;DEFINING FIRST ITER
+    LANDA_STORE = DBLARR(MITER+1) ;Array to store lambda variation with iter
 
-  CLANDA = 0 ;SOME DEFINITIONS TO CONTROL THE FUDGE PARAMETER
-  REPITE = 1
-  PILLADO = 0
-  ITER = 0  ;DEFINING FIRST ITER
-  LANDA_STORE = DBLARR(MITER+1) ;Array to store lambda variation with iter
-  PARBETA_better = 5d0
-  PARBETA_worst = 10d0
-  PARBETA_FACTOR = 1d0
-
-  ;POLARIZATION THRESHOLD (If Stokes q, u, and v are below it, set B, GAMMA, and AZI to cero
-  IF KEYWORD_SET(pol) then begin
-    INDEX = INDGEN(N_COMP)
-    LIMP = POL
-    IF (MAX(ABS(STOKESPROF[*,1])) lt LIMP) AND (MAX(ABS(STOKESPROF[*,2])) lt LIMP) $
-      AND (MAX(ABS(STOKESPROF[*,3])) lt LIMP) THEN BEGIN
-        P_I[1] = 0D0 & P_I[5] = 0D0 & P_I[6] = 0D0
-        FIXED[NPAR*INDEX+1] = 0D0 & FIXED[NPAR*INDEX+5] = 0D0 & FIXED[NPAR*INDEX+6] = 0D0
+    ;POLARIZATION THRESHOLD (If Stokes q, u, and v are below it, set B, GAMMA, and AZI to cero
+    IF KEYWORD_SET(pol) then begin
+        INDEX = INDGEN(N_COMP)
+        LIMP = POL
+        IF (MAX(ABS(STOKESPROF[*,1])) lt LIMP) AND (MAX(ABS(STOKESPROF[*,2])) lt LIMP) $
+          AND (MAX(ABS(STOKESPROF[*,3])) lt LIMP) THEN BEGIN
+            P_I[1] = 0D0 & P_I[5] = 0D0 & P_I[6] = 0D0
+            FIXED[NPAR*INDEX+1] = 0D0 & FIXED[NPAR*INDEX+5] = 0D0 & FIXED[NPAR*INDEX+6] = 0D0
+        ENDIF
     ENDIF
-  ENDIF
 
-  ;Compute the ME RFs and the initial synthetic Stokes profiles for INIT MODEL
-  ME_DER,P_I,WLI,AXIS,YFIT,PDER,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,$
-    AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs,crosst=crosst,nlte=nlte
+    ;Compute the ME RFs and the initial synthetic Stokes profiles for INIT MODEL
+    ME_DER,P_I,WLI,AXIS,YFIT,PDER,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,$
+      AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs,crosst=crosst,nlte=nlte
 
-  ;The derivatives with respect to fixed parameters are set to cero
-  fxx = where(fixed eq 1)
-  for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
+    ;The derivatives with respect to fixed parameters are set to cero
+    fxx = where(fixed eq 1)
+    for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 
-; Take into account the local stray light in the merit function as in Asensio Ramos and Manso Sainz, 2010.
-If keyword_set(mlocal) then begin ;only valid out of NLTE
-	;mlocal is the number of averaged pixels
-	rho = dblarr(4)
-	drho = dblarr(4)
-	rho[0] = reform( 1./6. * total( (stokesprof(0:5,0) - mean(stokesprof(0:5,0)) ) * (slight(0:5,0) - mean(slight(0:5,0)) ) ) )
-	rho[1:3] = 0d0
-	drho[0] = 2d0*(1d0 - p_i(10))/(mlocal*1d0)*sig[0] - 2*rho[0]
-	term1 = 1d0 + (1d0 - p_i(10))^2d0/(mlocal*1d0) ;1-(1-alpha)^2/M
-	sigo = sig
-	sig = sigo*term1 - 2d0*(1d0 - p_i(10))*rho
-endif
-
-  ;Computes the gradient, the covariance and the initial merit function value
-  COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,CHISQR,drho=dhro
-
-  ;Store old chisqr value
-  OCHISQR=CHISQR
-
-   P_M = P_I
-
-  ;BEGIND THE ITERATION LOOP FOR THE LM OPTIMIZATION ALGORITHM
-REPEAT BEGIN
-
-    iter_info.lmb[ITER] = FLAMBDA
-    iter_info.CHISQR[ITER] = CHISQR
-    IF (ITER GE 1) AND LOGCLAMBDA THEN PARBETA_FACTOR = alog10(iter_info.CHISQR[ITER])/alog10(iter_info.CHISQR[0])
-
-    IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
-    COVAR=ALPHA
-    COVAR(DIAG)=COVAR(DIAG)*(1D0+FLAMBDA)
-    BETAD=BETA
-
-;       INVERT COVARIANCE MATRIX TO FIND NEW MODEL PARAMETERS.
-
-    MIL_SVD,COVAR,BETAD,DELTA,LOSW,use_svd_cordic = use_svd_cordic
-
-	;CHECK MAX VARIATION OF DELTA AND SET NEW MODEL P_M
-
-    for i=0,NPAR*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
-	  DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1)
-
-    P_M(fxx) = P_I(fxx) - DELTA(fxx) ;NEW PARAMS
-    
-    ;CHECK PARAMETERS
-    CHECK_PARAM,P_M,NPAR,PLIMITS=plimits,n_comp=n_comp
-
-	;EVALUATE FUNCTION
-    mil_sinrf,p_m,wli,AXIS,yfit,triplet=triplet,slight=slight,filter=filter,$
-      AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs,crosst=crosst,nlte=nlte
-
-	;new chisqr
-    CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
-
-      ;****CONVERGENCE CONDITION *****
-    IF CHISQR-OCHISQR lt 0. then begin ;;FIT GOT BETTER
-      ;****CONVERGENCE CONDITION *****
-
-      if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) OR (CHISQR lt 0.0001) $
-    THEN CLANDA = 1 ;Stoping criteria
-
-      ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10
-                       if flambda gt 1.e-4 then begin
-                    flambda=0.1*flambda
-                 endif else	begin
-                    flambda=0.5*flambda
-                 endelse
-
-;      flambda=flambda/(PARBETA_better*PARBETA_FACTOR)      
-            ;RNOISE_PROBLEM
-;      IF FLAMBDA LT 1 THEN BEGIN
-;      II = 1d0
-;      REPEAT II = II * 10. UNTIL FLAMBDA-ROUND(FLAMBDA*II) LT 0
-;      II = II*10d0
-;      FLAMBDA = ROUND(FLAMBDA*II)/II
-;      ENDIF
-      
-      ;store new model parameters
-      P_I(FXX) = P_M(FXX)
-      ;store parameters for studing the evolution of them (opt mode)
-      iter_info.Params_stored[*,ITER] = P_I
-      iter_info.conv_crit[ITER] = 1.
-      goodc = goodc + 1
-
-      ;info
-      IF not(prt) THEN PRINT,'ITERATION =',ITER,' , CHISQR =',CHISQR,$
-        '  CONVERGE - LAMBDA= ',flambda,(OCHISQR-CHISQR)/CHISQR
-
-      ;compute new RFs and Stokes profiles
-      me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,$
-        AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs,crosst=crosst,nlte=nlte
-
-      for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
-
-      ;Local stray light option (modification of chi2)
-      If keyword_set(mlocal) then begin
+    ; Take into account the local stray light in the merit function as in Asensio Ramos and Manso Sainz, 2010.
+    If keyword_set(mlocal) then begin ;only valid out of NLTE
+        ;mlocal is the number of averaged pixels
+        rho = dblarr(4)
+        drho = dblarr(4)
+        rho[0] = reform( 1./6. * total( (stokesprof(0:5,0) - mean(stokesprof(0:5,0)) ) * (slight(0:5,0) - mean(slight(0:5,0)) ) ) )
+        rho[1:3] = 0d0
         drho[0] = 2d0*(1d0 - p_i(10))/(mlocal*1d0)*sig[0] - 2*rho[0]
         term1 = 1d0 + (1d0 - p_i(10))^2d0/(mlocal*1d0) ;1-(1-alpha)^2/M
+        sigo = sig
         sig = sigo*term1 - 2d0*(1d0 - p_i(10))*rho
-      endif
-
-      COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,OCHISQR,drho=dhro
-
-    ENDIF ELSE BEGIN ;ASSUMES FIT GOT WORSE
-
-      ;store parameters for studing the evolution of them (opt mode)
-      iter_info.Params_stored[*,ITER] = P_I
-      iter_info.conv_crit[ITER] = 0.
-
-      ;increase flambda by a factor 10
-                 if flambda le 1.e-3 then begin
-                    flambda=100.*flambda
-                 endif else begin
-                    if flambda lt 1.e3 then begin
-                       flambda=10.*flambda
-                    endif else	begin
-                       flambda=2.*flambda
-                    endelse
-                 endelse
-
-;      flambda=flambda*PARBETA_worst*PARBETA_FACTOR
-
-      ;RNOISE_PROBLEM
-;      IF FLAMBDA LT 1 THEN BEGIN
-;      II = 1d0
-;      REPEAT II = II * 10. UNTIL FLAMBDA-ROUND(FLAMBDA*II) LT 0
-;      II = II*100d0
-;      FLAMBDA = ROUND(FLAMBDA*II)/II
-;      ENDIF
-
-      ;info
-      IF not(prt) THEN PRINT,'ITERATION =',ITER,' , CHISQR =',OCHISQR,$
-        '  NOT CONVERGE - LAMBDA= ',flambda,(OCHISQR-CHISQR)/CHISQR
-
-    ENDELSE
-
-    if (ITER gt 500) $
-      AND (FLAMBDA eq iter_info.lmb(ITER-1)) $
-      AND (iter_info.lmb(ITER) eq iter_info.lmb(ITER-2)) then begin
-    flambda=flambda * 10d0
     endif
 
-    ITER=ITER+1
+    ;Computes the gradient, the covariance and the initial merit function value
+    COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,CHISQR,drho=dhro
 
-ENDREP UNTIL (ITER GT MITER) OR (CLANDA EQ 1)
+    ;Store old chisqr value
+    OCHISQR=CHISQR
 
-iter_info.citer = goodc
-iter_info.iter = iter
+    P_M = P_I
 
-  ;END OF MAIN LOOP
+    ;BEGIN THE ITERATION LOOP FOR THE LM OPTIMIZATION ALGORITHM
+    REPEAT BEGIN
 
-  COVAR=1./ALPHA
-  ERR = SQRT(COVAR(DIAG)*OCHISQR*4*NPOINTS/NFREE) ; Almeida
+        iter_info.lmb[ITER] = FLAMBDA
+        iter_info.CHISQR[ITER] = CHISQR
+        ;IF (FLAMBDA GT 1d25) OR (FLAMBDA LT 1d-25) THEN CLANDA=1 ;Cond to Flambda !!!!!!!!!!
+        COVAR=ALPHA
+        COVAR(DIAG)=COVAR(DIAG)*(1D0+FLAMBDA)
+        BETAD=BETA
 
-  ;keep last merit function value
-  CHISQF=OCHISQR
+        ;INVERT COVARIANCE MATRIX TO FIND NEW MODEL PARAMETERS.
 
-  ;Stokes I, Q, U, and V merit function values.
-  getshi=fltarr(4)
-  for ii=0,3 do getshi(ii)=TOTAL(TOTAL((YFIT(*,ii)-STOKESPROF(*,ii))^2d0*W(*,ii),1,/double)/SIG(ii)^2d0,/double)/NFREE
+        MIL_SVD,COVAR,BETAD,DELTA,LOSW,use_svd_cordic = use_svd_cordic
+
+        ;CHECK MAX VARIATION OF DELTA AND SET NEW MODEL P_M
+
+        for i=0,NPAR*n_comp-1 do IF VLIMITS(i).SET EQ 1 THEN $
+        DELTA(i) = VLIMITS(i).LIMITS(0) > DELTA(i) < VLIMITS(i).LIMITS(1)
+
+
+        P_M(fxx) = P_I(fxx) - DELTA(fxx) ;NEW PARAMS
+    
+        ;CHECK PARAMETERS
+        CHECK_PARAM,P_M,NPAR,PLIMITS=plimits,n_comp=n_comp
+
+        ;EVALUATE FUNCTION
+        mil_sinrf,p_m,wli,AXIS,yfit,triplet=triplet,slight=slight,filter=filter,$
+          AC_RATIO=ac_ratio,n_comp=n_comp,ipbs=ipbs,crosst=crosst,nlte=nlte
+
+        ;new chisqr
+        CHISQR = TOTAL(TOTAL((YFIT-STOKESPROF)^2d0*W,1,/double)/SIG^2d0,/double)/NFREE
+
+        ;****CONVERGENCE CONDITION *****
+        IF CHISQR-OCHISQR lt 0. then begin ;;FIT GOT BETTER
+        ;****CONVERGENCE CONDITION *****
+
+            if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) OR (CHISQR lt CHISQR_LIMIT) $
+              THEN CLANDA = 1 ;Stoping criteria
+
+            ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10
+            flambda=0.1*flambda
+
+            ;store new model parameters
+            P_I(FXX) = P_M(FXX)
+            ;store parameters for studing the evolution of them (opt mode)
+            iter_info.Params_stored[*,ITER] = P_I
+            iter_info.conv_crit[ITER] = 1.
+            goodc = goodc + 1
+
+            ;info
+            IF not(prt) THEN PRINT,'ITERATION =',ITER,' , CHISQR =',CHISQR,$
+              '  CONVERGE     - LAMBDA= ',flambda,(OCHISQR-CHISQR)/CHISQR
+
+            ;compute new RFs and Stokes profiles
+            me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,$
+              AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs,crosst=crosst,nlte=nlte
+
+            for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
+
+            ;Local stray light option (modification of chi2)
+            If keyword_set(mlocal) then begin
+              drho[0] = 2d0*(1d0 - p_i(10))/(mlocal*1d0)*sig[0] - 2*rho[0]
+              term1 = 1d0 + (1d0 - p_i(10))^2d0/(mlocal*1d0) ;1-(1-alpha)^2/M
+              sig = sigo*term1 - 2d0*(1d0 - p_i(10))*rho
+            endif
+
+            COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,OCHISQR,drho=dhro
+
+        ENDIF ELSE BEGIN ;ASSUMES FIT GOT WORSE
+
+            ;store parameters for studing the evolution of them (opt mode)
+            iter_info.Params_stored[*,ITER] = P_I
+            iter_info.conv_crit[ITER] = 0.
+
+            ;increase flambda by a factor 10
+            flambda=10.*flambda
+
+            ;info
+            IF not(prt) THEN PRINT,'ITERATION =',ITER,' , CHISQR =',OCHISQR,$
+              '  NOT CONVERGE - LAMBDA= ',flambda,(OCHISQR-CHISQR)/CHISQR
+        ENDELSE
+
+        ITER=ITER+1
+
+    ENDREP UNTIL (ITER GT MITER) OR (CLANDA EQ 1)
+
+    iter_info.citer = goodc
+    iter_info.iter = iter
+
+    ;END OF MAIN LOOP
+
+    COVAR=1./ALPHA
+    ERR = SQRT(COVAR(DIAG)*OCHISQR*4*NPOINTS/NFREE) ; Almeida
+
+    ;keep last merit function value
+    CHISQF=OCHISQR
+
+    ;Stokes I, Q, U, and V merit function values.
+    getshi=fltarr(4)
+    for ii=0,3 do getshi(ii)=TOTAL(TOTAL((YFIT(*,ii)-STOKESPROF(*,ii))^2d0*W(*,ii),1,/double)/SIG(ii)^2d0,/double)/NFREE
 
 END

@@ -265,7 +265,7 @@ for i=0,1023 do begin
         init=init_model
 
             milos, wl, laxis, init, profile, yfit=yfit,fix=fix,/inversion,$
-              chisqr=chisqr,miter=100,err=err,filter=30d0,$
+              chisqr=chisqr,miter=400,err=err,filter=30d0,$
               sigma=sigma,/doplot,weight=weight,/quiet,getshi=getshi,/ac_ratio
 
             result(i,*)=init
