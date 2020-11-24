@@ -2,16 +2,14 @@
 ; NAME:
 ;	LM_MILS
 ;
-; AUTHOR:
-;	D. Orozco Su�rez
-;						National Astronomical Observatory of Japan,�
-;						2-21-1 Osawa, Mitaka, 181-8588, JAPAN
-;						d.orozco@nao.ac.jp
-;
-;	J.C. del Toro Iniesta
-;						Instituto de Astrof�sica de Andaluc�a (CSIC)
-;						Apdo de Correos 3004, 18080 Granada, SPAIN
-;						jti@iaa.es
+; AUTHORS:
+;   D. Orozco Suarez
+;   orozco@iaa.es
+;	and
+;   J.C. del Toro Iniesta
+; ADDRESS:
+;      Instituto de Astrofisica de Andalucia (CSIC)
+;      Apdo de Correos 3004, 18080 Granada, SPAIN
 ;
 ; PURPOSE: Core routine of the MILOS procedure. It performs a non-linear least squares fit
 ;          using the Levenberg-Marquardt algorithm
@@ -19,11 +17,13 @@
 ; CATEGORY: Spectropolarimetric fitting
 ;
 ; CALLING SEQUENCE: LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit[, err, chisqf,iter,SLIGHT=slight,TOPLIM=toplim,$
-;    TRIPLET=triplet, QUIET=quiet,MITER=miter, WEIGHT=weight,FIX=fix,SIGMA=sigma,$
-;    FILTER=filter, ILAMBDA=ilambda, NOISE=noise, POL=pol, GETSHI=getshi, MU=mu,$
-;    PLIMITS=plimits,VLIMITS=vlimits,N_COMPONENTS=n_components,$
-;    AC_RATIO=ac_ratio,MLOCAL=mlocal]
-;
+;    TRIPLET=triplet, QUIET=quiet,MITER=miter, WEIGHT=weight,FIX=fix,SIGMA=sigma,
+;    FILTER=filter, ILAMBDA=ilambda, NOISE=noise, POL=pol, GETSHI=getshi, MU=mu,
+;    PLIMITS=plimits,VLIMITS=vlimits,N_COMP=n_comp,
+;    AC_RATIO=ac_ratio,MLOCAL=mlocal,numerical=numerical,iter_info = iter_info,
+;    use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,
+;    nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT
+
 ; INPUTS (mandatory):
 ;           WLI: A scalar or array with the central wavelength(s) of the line(s)
 ;                in Angstroms
@@ -147,7 +147,7 @@
 ;   Added keywork VLIMITS=vlimits to constraint Delta. 27 Feb, 2009. DOS
 ;   Added local straylight weight in merit function (See A. Asensio Ramos 2010) Aug, 2011. DOS
 ;   Added two components in Nov. 2011. DOS
-;   Added keyword NLTE in Jul-Dec 2019 and modified program to deal with nlte DOS
+;   Added keyword NLTE in Nov-2020 and modified program to deal with nlte DOS
 ;-
 
 pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,toplim=toplim,$
@@ -155,7 +155,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
 	  PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
 	  N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
-    ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT
+    ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT,saverfs=saverfs
 
     ; Enviromental parameters
     prt = keyword_set(QUIET)
@@ -218,7 +218,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
 
     ;Compute the ME RFs and the initial synthetic Stokes profiles for INIT MODEL
     ME_DER,P_I,WLI,AXIS,YFIT,PDER,TRIPLET=triplet,SLIGHT=slight,FILTER=filter,$
-      AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs,crosst=crosst,nlte=nlte
+      AC_RATIO=ac_ratio,N_COMP=n_comp,NUMERICAL=numerical,IPBS=ipbs,crosst=crosst,nlte=nlte,saverfs=saverfs
 
     ;The derivatives with respect to fixed parameters are set to cero
     fxx = where(fixed eq 1)
@@ -300,7 +300,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
 
             ;compute new RFs and Stokes profiles
             me_der,p_i,wli,AXIS,yfit,pder,triplet=triplet,slight=slight,filter=filter,$
-              AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs,crosst=crosst,nlte=nlte
+              AC_RATIO=ac_ratio,n_comp=n_comp,numerical=numerical,ipbs=ipbs,crosst=crosst,nlte=nlte,saverfs=saverfs
 
             for I=0,nterms-1 DO PDER(*,I,*)=PDER(*,I,*)*FIXED(I)
 

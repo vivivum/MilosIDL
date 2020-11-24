@@ -1,34 +1,44 @@
 ;+
 ; NAME:
 ;   MILOS
-;
-; AUTHOR:
-;   D. Orozco Suarez
+;   Created for academic purposes 
+;	First version in 2005 (D. Orozco Suárez - Instituto de Astrofisica de Andalucia (CSIC)
+;   Heavily updated during years
+;   Baseline for Solar Orbiter PHI Radiative Transfer Inverter
+;   High end versions in C, fortran and Cuda
+;   Part of the code was modified while the authors postdoc stay at:
 ;      National Astronomical Observatory of Japan,
 ;      2-21-1 Osawa, Mitaka, 181-8588, JAPAN
-;      d.orozco@nao.ac.jp
 ;
+; AUTHORS:
+;   D. Orozco Suarez
+;   orozco@iaa.es
+;	and
 ;   J.C. del Toro Iniesta
+; ADDRESS:
 ;      Instituto de Astrofisica de Andalucia (CSIC)
 ;      Apdo de Correos 3004, 18080 Granada, SPAIN
-;      jti@iaa.es
 ;
 ; VERSIONS:
-;   For current and updated versions go to "hinode.nao.ac.jp/~orozco/MILOS" or
+;   For current and updated versions go to "spg.iaa.es" or "https://github.com/vivivum/MilosIDL"
 ;
 ; PURPOSE:
-;   Synthesis and inversion of Stokes profiles under the Milne-Eddington approximation
+;   Synthesis and inversion of Stokes profiles under the Milne-Eddington approximation 
 ;
 ; CATEGORY:
 ;   Spectropolarimetric fitting
 ;
 ; CALLING SEQUENCE:
-;   MILOS, WLI, AXIS, MODEL, STOKESPROF[, YFIT=yfit][, ERR=err][,$
-;      CHISQR=chisqr][,ITER=iter][,SLIGHT=slight][,TOPLIM=toplim][,$
-;      TRIPLET=triplet][,QUIET=quiet][,MITER=miter][,$
-;      WEIGHT=weight][,FIX=fix][,SIGMA=sigma][,$
-;      SYNTHESIS=synthesis][,INVERSION=inversion][,RFS=rfs][,ILAMBDA=ilambda][,$
-;      FILTER=filter][,NOISE=noise][,POL=pol][,GETSHI=getshi][,DOPLOT=doplot][,AC_RATIO=ac_ratio]
+;   MILOS, WLI, AXIS, MODEL, STOKESPROF[, YFIT=yfit][, ERR=err],
+;      [CHISQR=chisqr][,ITER=iter][,SLIGHT=slight][,TOPLIM=toplim],
+;      [TRIPLET=triplet][,QUIET=quiet][,MITER=miter],
+;      [WEIGHT=weight][,FIX=fix][,SIGMA=sigma],
+;      [SYNTHESIS=synthesis][,INVERSION=inversion][,RFS=rfs][,ILAMBDA=ilambda],
+;      [FILTER=filter][,NOISE=noise][,POL=pol][,GETSHI=getshi][,DOPLOT=doplot],
+;      [MU=mu],[PARLIMITS=parlimits],[VARLIMITS=varlimits],[AC_RATIO=ac_ratio],
+;      [MLOCAL=MLOCAL],[N_COMPONENTS=n_components],[numerical=numerical],[iter_info = iter_info],
+;      [use_svd_cordic = use_svd_cordic],[ipbs=ipbs],[crosst = crosst],[OTHERS = OTHERS],
+;      [nlte=nlte]
 ;
 ; INPUTS:
 ;   WLI: A scalar or array with the central wavelength(s) of the line(s)
@@ -110,7 +120,18 @@
 ;            The usage is similar to PARLIMITS
 ;   AC_RATIO: This keywork is for coupling the eta0 parameters of the 630 nm lines
 ;		using a polinomial function. More information in "Simultaneous ME inversion of the Fe I 630 nm lines"
-;		Orozco Su\'arez, D., Bellot Rubio, L.R., and Del Toro Iniesta, J.C., A&ARN, inpress, (2010)
+;		Orozco Su\'arez, D., Bellot Rubio, L.R., and Del Toro Iniesta, J.C., 2010, A&ARN, 518A, 3O
+;   MLOCAL: number of pixels used to calculate the local stray light profile (modification of the merit
+;			function as explained in  Asensio Ramos, A. & Manso Sainz, R. 2011, ApJ)
+;   N_COMPONENTS: number of components. In this case, if there is N components, the model dimension
+;       is multiplied by the number of components and the last parameter of each model correspond to the filling factor
+;   NUMERICAL: compute RFs numerically
+;   ITER_INFO: provide convergence information in a structure
+;   IPBS: Activate Paschen-Back effect in case of He 1083.0 nm line
+;   CROSST: experimental. Fits the cross-talk from I to QUV. return the cross-talk as additional parameters in the model
+;   OTHERS: any keywork for development
+;   NLTE: Run NLTE in case N=2 (two exponentials). In this case, the model has 4 additional free parameters
+;         See test_nlte for further information
 ;
 ; OUTPUTS:
 ;   STOKESPROF: Array with the output (if the /SYNTHESIS keyword is set) Stokes profiles.
@@ -191,9 +212,9 @@
 ;
 ; REFERENCES:
 ;   Orozco Suarez, D., and del Toro Iniesta, J.C., A&A 462, 1137 (2007)
-;   Orozco Suarez, D., PhD Thesis, 2008 (ISBN: )
-;   Orozco Suarez, D., Bellot Rubio, L.R., and del Toro Iniesta, J.C., A&ARN, inpress (2010)
-
+;   Orozco Suarez, D., PhD Thesis, 2008 
+;   Orozco Suarez, D., Bellot Rubio, L.R., and del Toro Iniesta, J.C., 2010, A&ARN, 518A, 3O
+;
 ; MODIFICATION HISTORY:
 ;   First beta version created, D Orozco Suarez (DOS) and J.C. del Toro Iniesta (JTI), 2007
 ;   First beta documentation version, JTI, June 2008
@@ -209,8 +230,9 @@
 ;   Added two components in Nov. 2011. DOS
 ;   Added numerical derivatives in Dec. 2011. DOS
 ;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
-;   Added keyword NLTE in Jul 2019 and modified program to deal with nlte DOS
-;   Removed loglambda. Added OTHERS and CHISQR_LIMIT, Dec 2019
+;   Removed loglambda. Added OTHERS, Dec 2019
+;   Added keyword NLTE in and modified program to deal with nlte DOS, Nov 2020 
+;   Clean version, Nov 2020
 ;-
 ; Original MILOS, Copyright (C) 2004-2011,  D. Orozco Suarez
 ; This software is provided as is without any warranty whatsoever.
@@ -218,7 +240,6 @@
 ; unmodified copies is granted, provided this copyright and disclaimer
 ; are included unchanged.
 ;-
-
 
 pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
     CHISQR=chisqr,ITER=iter,SLIGHT=slight,TOPLIM=toplim,$
@@ -229,11 +250,12 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
     use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,$
-    nlte=nlte;,CHISQR_LIMIT=CHISQR_LIMIT
+    nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT,saverfs=saverfs
 
 COMMON QUANTIC,C_N
 PRT = keyword_set(QUIET)
 
+If keyword_set(mlocal) then mlocal = double(mlocal)
 ;Error handling
 ;on_error,2
 
@@ -388,10 +410,10 @@ endif else if keyword_set(inversion) then begin
 		PLIMITS[index+10].LIMITS = [0d0,1d0]  ; Magnetic filling factor
 	ENDIF else begin
 		PLIMITS[index+14].LIMITS = [0d0,1d0]  ; Magnetic filling factor
-		PLIMITS[index+10].LIMITS = [0d0,10d0]  ; NLTE
-		PLIMITS[index+11].LIMITS = [-10d0,50d0]  ; NLTE  
-		PLIMITS[index+12].LIMITS = [0d0,10d0]  ; NLTE  
-		PLIMITS[index+13].LIMITS = [-10d0,50d0]  ; NLTE  
+		PLIMITS[index+10].LIMITS = [0d0,100d0]  ; NLTE
+		PLIMITS[index+11].LIMITS = [-100d0,500d0]  ; NLTE  
+		PLIMITS[index+12].LIMITS = [0d0,100d0]  ; NLTE  
+		PLIMITS[index+13].LIMITS = [-100d0,500d0]  ; NLTE  
 	endelse
 
 	if keyword_set(PARLIMITS) then begin
@@ -462,7 +484,7 @@ endif else if keyword_set(inversion) then begin
 		FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,GETSHI=getshi,MU=mu,PLIMITS=plimits,$
 		VLIMITS=vlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
 		iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,$
-		OTHERS = OTHERS,nlte=nlte;,CHISQR_LIMIT=CHISQR_LIMIT
+		OTHERS = OTHERS,nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT,saverfs=saverfs
 
 	if keyword_set(doplot) then begin
 		!p.multi=[0,2,2]
@@ -485,7 +507,7 @@ endif else if ARG_PRESENT(RFS) then begin
 
     ME_DER,MODEL,WLI,AXIS,STOKESPROF,RFS,TRIPLET=triplet,ipbs=ipbs,$
     	SLIGHT=slight,FILTER=filter,MU=mu,AC_RATIO=ac_ratio,N_COMP=n_comp,$
-		numerical=numerical,crosst=crosst,nlte=nlte
+		numerical=numerical,crosst=crosst,nlte=nlte,saverfs=saverfs
 
 	if keyword_set(doplot) then begin
 		!p.multi=[0,2,2]

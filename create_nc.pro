@@ -2,11 +2,14 @@
 ; NAME:
 ;	CREATE_NC
 ;
-; AUTHOR:
-;	D. Orozco Suarez
-;						National Astronomical Observatory of Japan,�
-;						2-21-1 Osawa, Mitaka, 181-8588, JAPAN
-;						d.orozco@nao.ac.jp
+; AUTHORS:
+;   D. Orozco Suarez
+;   orozco@iaa.es
+;	and
+;   J.C. del Toro Iniesta
+; ADDRESS:
+;      Instituto de Astrofisica de Andalucia (CSIC)
+;      Apdo de Correos 3004, 18080 Granada, SPAIN
 ;
 ; PURPOSE:
 ;	Calculate the shift and strength of the anomalous zeeman effect in ls coupling

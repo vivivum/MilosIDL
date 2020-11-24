@@ -53,7 +53,6 @@
 ;
 ;-
 
-
 pro fvoigt,DAMP,VV,H,F
 
 	a=[122.607931777104326d0, 214.382388694706425d0, 181.928533092181549d0,$
@@ -68,8 +67,8 @@ pro fvoigt,DAMP,VV,H,F
 
   Z=((((((A(6)*Z+A(5))*Z+A(4))*Z+A(3))*Z+A(2))*Z+A(1))*Z+A(0))/$
           (((((((Z+B(6))*Z+B(5))*Z+B(4))*Z+B(3))*Z+B(2))*Z+B(1))*Z+B(0))
-
+          
 	h=double(z)
-	f=sign(vv)*imaginary(z)*0.5d0
+	f=sign(vv)*imaginary(z)*0.5
 
 end

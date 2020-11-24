@@ -1,17 +1,15 @@
 ;+
 ; NAME:
-;	MIL_SINRF_NLTE
+;	MIL_SINRF
 ;
-; AUTHOR:
-;	D. Orozco Su�rez
-;						National Astronomical Observatory of Japan,�
-;						2-21-1 Osawa, Mitaka, 181-8588, JAPAN
-;						d.orozco@nao.ac.jp
-;
-;	J.C. del Toro Iniesta
-;						Instituto de Astrof�sica de Andaluc�a (CSIC)
-;						Apdo de Correos 3004, 18080 Granada, SPAIN
-;						jti@iaa.es
+; AUTHORS:
+;   D. Orozco Suarez
+;   orozco@iaa.es
+;	and
+;   J.C. del Toro Iniesta
+; ADDRESS:
+;      Instituto de Astrofisica de Andalucia (CSIC)
+;      Apdo de Correos 3004, 18080 Granada, SPAIN
 ;
 ; PURPOSE: Synthesis of Stokes profiles without calculating response functions
 ;
@@ -72,7 +70,7 @@
 ;   First beta documentation version, JTI, June 2008
 ;   Added keywork AC_RATIO. 21 Jan, 2010. DOS
 ;   Added keywork CROSST for crostalk calculations. Nov, 2016. DOS
-;   THIS ONE work in NLTE. July, 2019. DOS -> A. Dorantes PhD
+;   THIS ONE work in NLTE. Nov, 2020. DOS -> A. Dorantes PhD thesis
 ;-
 
 pro MIL_SINRF,PARAM,WL,LMB,SPECTRA,TRIPLET=triplet,MU=mu,SLIGHT=slight,$
@@ -159,7 +157,7 @@ RHOQ=0D0 & RHOU=0D0 & RHOV=0D0
 VNULO=DBLARR(NUML)
 ;->
 IF keyword_set(NLTE) THEN BEGIN
-    ;NOW the MATRIC C is different. Instead of ETAI = 1 + ETAI -> ap1*MU + 1 + ETAI
+    ;NOW the MATRIX C is different. Instead of ETAI = 1 + ETAI -> ap1*MU + 1 + ETAI
     ETAI1_NLTE = 1D0 + ap1*MU
     ETAI2_NLTE = 1D0 + ap2*MU
 ENDIF
@@ -347,13 +345,13 @@ IF keyword_set(NLTE) THEN BEGIN
                 (ETAI1_NLTE^2D0+RHOQ^2D0+RHOU^2D0+RHOV^2D0)) - $
                 A2*(1d0 - (1+ap2*MU)*DELTAI2_NLTE*ETAI2_NLTE*$
                 (ETAI2_NLTE^2D0+RHOQ^2D0+RHOU^2D0+RHOV^2D0))
+
     SPECTRA(*,1)= SPECTRA(*,1) + $
-                A1*ap1*MU*DELTAI1_NLTE*(ETAI1_NLTE^2D0*ETAQ+$
-                ETAI1_NLTE*(ETAV*RHOU-ETAU*RHOV)+$
-                RHOQ*(ETAQ*RHOQ+ETAU*RHOU+ETAV*RHOV))-$
+                A1*ap1*MU*DELTAI1_NLTE*(ETAI1_NLTE^2D0*ETAQ+ETAI1_NLTE*(ETAV*RHOU-ETAU*RHOV) + $
+                RHOQ*(ETAQ*RHOQ+ETAU*RHOU+ETAV*RHOV)) - $
                 A2*(1+ap2*MU)*DELTAI2_NLTE*(ETAI2_NLTE^2D0*ETAQ+$
-                ETAI2_NLTE*(ETAV*RHOU-ETAU*RHOV)+$
-                RHOQ*(ETAQ*RHOQ+ETAU*RHOU+ETAV*RHOV))
+                ETAI2_NLTE*(ETAV*RHOU-ETAU*RHOV)+RHOQ*(ETAQ*RHOQ+ETAU*RHOU+ETAV*RHOV))
+
     SPECTRA(*,2)= SPECTRA(*,2) + $
                 A1*ap1*MU*DELTAI1_NLTE*(ETAI1_NLTE^2D0*ETAU+$
                 ETAI1_NLTE*(ETAQ*RHOV-ETAV*RHOQ)+$
@@ -380,8 +378,7 @@ edge=(NUML mod 2)+1
 axis=LMB(0:NUML-edge)
 numln=n_elements(axis)
 
-IF MC gt 0.001 THEN BEGIN  ; The macroturbulent velocity
-
+IF MC gt 0.01 THEN BEGIN  ; The macroturbulent velocity
 ; We assume a macroturbulent Gauss profile
 
     G = MACROTUR(MC,LMB(0:NUML-edge),Wl(1))
@@ -463,9 +460,9 @@ ENDIF
     spectra(*) = 0
 
     if n_comp gt 1 then begin
-    for k=0,n_comp-1 do begin
-        spectra = spectra + Spectra_comp(*,*,k)*fill_fractions(k)
-    endfor
+        for k=0,n_comp-1 do begin
+            spectra = spectra + Spectra_comp(*,*,k)*fill_fractions(k)
+        endfor
     endif else spectra = Spectra_comp
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
