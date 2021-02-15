@@ -701,8 +701,6 @@ IF (D_N EQ 0) OR (D_N EQ 2) then begin  ;ANALITIC RESPONSE FUNCTIONS
         IF keyword_set(NLTE) THEN BEGIN
 
             ;Response Functions with respect A1, A2, ap1, ap2 
-            print,A1,ap1,A2,ap2
-
             ;A1
             D_SPECTRA(*,10,0) = (1d0 - ap1*MU*DTI_NLTE1*ETAI1_NLTE*GP3_NLTE1)
             D_SPECTRA(*,10,1) = ap1*MU*DTI_NLTE1*(GP4_NLTE1+RHOQ*GP2_NLTE1)

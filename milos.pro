@@ -250,7 +250,7 @@ pro MILOS, WLI, AXIS, MODEL, STOKESPROF, YFIT=yfit, ERR=err,$
 	PARLIMITS=parlimits,VARLIMITS=varlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,$
 	N_COMPONENTS=n_components,numerical=numerical,iter_info = iter_info,$
     use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,$
-    nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT,saverfs=saverfs
+    nlte=nlte,C_LIMIT=C_LIMIT,saverfs=saverfs
 
 COMMON QUANTIC,C_N
 PRT = keyword_set(QUIET)
@@ -399,7 +399,7 @@ endif else if keyword_set(inversion) then begin
 	PLIMITS[index].LIMITS = [1d0,2500d0]  ; Eta0
 	PLIMITS[index+1].LIMITS = [0d0,4500d0]  ; Magnetic field
 	PLIMITS[index+2].LIMITS = [-100d0,100d0]  ; Velocity (km/s)
-	PLIMITS[index+3].LIMITS = [1d-4,6d-1]  ; Doppler width
+	PLIMITS[index+3].LIMITS = [1d-4,15d-1]  ; Doppler width
 	PLIMITS[index+4].LIMITS = [1d-4,1d1]  ; Damping
 	PLIMITS[index+5].LIMITS = [0d0,180d0]  ; Inclination
 	PLIMITS[index+6].LIMITS = [0d0,180d0]  ; Azimuth
@@ -484,7 +484,7 @@ endif else if keyword_set(inversion) then begin
 		FILTER=filter,ILAMBDA=ilambda,NOISE=noise,POL=pol,GETSHI=getshi,MU=mu,PLIMITS=plimits,$
 		VLIMITS=vlimits,AC_RATIO=ac_ratio,MLOCAL=MLOCAL,N_COMP=n_comp,numerical=numerical,$
 		iter_info = iter_info,use_svd_cordic = use_svd_cordic,ipbs=ipbs,crosst = crosst,$
-		OTHERS = OTHERS,nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT,saverfs=saverfs
+		OTHERS = OTHERS,nlte=nlte,C_LIMIT=C_LIMIT,saverfs=saverfs
 
 	if keyword_set(doplot) then begin
 		!p.multi=[0,2,2]

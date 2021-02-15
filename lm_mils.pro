@@ -155,14 +155,14 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     filter=filter, ilambda=ilambda, noise=noise, pol=pol, getshi=getshi, $
 	  PLIMITS=plimits,VLIMITS=vlimits,MU=mu,AC_RATIO=ac_ratio,MLOCAL=mlocal,$
 	  N_COMP=n_comp,numerical=numerical,iter_info = iter_info,use_svd_cordic = use_svd_cordic,$
-    ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,nlte=nlte,CHISQR_LIMIT=CHISQR_LIMIT,saverfs=saverfs
+    ipbs=ipbs,crosst = crosst,OTHERS = OTHERS,nlte=nlte,C_LIMIT=C_LIMIT,saverfs=saverfs
 
     ; Enviromental parameters
     prt = keyword_set(QUIET)
     if not(keyword_set(miter)) then miter=50  ; Maximum number of iterations
     if not(keyword_set(ilambda)) then ilambda=10D0;0.1d0 ; Assumes close to global minimum
     if not(keyword_set(toplim)) then toplim=1D-12 ; Very low, It may stop by MITER
-    if not(keyword_set(CHISQR_LIMIT)) then CHISQR_LIMIT=1D-12 ; Very low, It may stop by MITER
+    if not(keyword_set(C_LIMIT)) then C_LIMIT=1D-12 ; Very low, It may stop by MITER
     ; if not(keyword_set(slight)) then print,'No stray light';slight=0 ; No stray light
     ; if not(keyword_set(filter)) then print,'No inst. filter profile'
     if not(prt) then print,'triplet='+string(keyword_set(triplet))
@@ -281,7 +281,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
         IF CHISQR-OCHISQR lt 0. then begin ;;FIT GOT BETTER
         ;****CONVERGENCE CONDITION *****
 
-            if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) OR (CHISQR lt CHISQR_LIMIT) $
+            if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) OR (CHISQR lt C_LIMIT) $
               THEN CLANDA = 1 ;Stoping criteria
 
             ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10

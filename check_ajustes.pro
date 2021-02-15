@@ -1,30 +1,33 @@
 pro check_ajustes,data,landas,result,ch,landa,order=order,$
-        n_comp=n_comp,nlte=nlte,zoom=zoom,color=color
+        n_comp=n_comp,nlte=nlte,zoom=zoom,color=color,yrange=yrange,si = si
 
+if not(keyword_set(yrange)) then yrange='[-0.1,0.1]'
+if not(keyword_set(si)) then yrangeI = '[1,0.6]'
 if not(keyword_set(n_comp)) then n_comp=1
 if not(keyword_set(order)) then order='xylp'
 if not(keyword_set(zoom)) then zoom=1
 if not(keyword_set(color)) then color=0
+ll = n_elements(landas)
 case order of
   'xylp': begin
-    p1 = 'plot,landas,data(x,y,*,0) ,/ynoz'
-    p2 = 'plot,landas,data(x,y,*,1)'
-    p3 = 'plot,landas,data(x,y,*,2)'
-    p4 = 'plot,landas,data(x,y,*,3)'
+    p1 = 'plot,landas,data(x,y,*,0) ,/ynoz,yrange='+si
+    p2 = 'plot,landas,data(x,y,*,1),yrange='+yrange
+    p3 = 'plot,landas,data(x,y,*,2),yrange='+yrange
+    p4 = 'plot,landas,data(x,y,*,3),yrange='+yrange
     s=size(result)
     end
   'xypl': begin
-    p1 = 'plot,landas,data(x,y,0,*) ,/ynoz'
-    p2 = 'plot,landas,data(x,y,1,*)'
-    p3 = 'plot,landas,data(x,y,2,*)'
-    p4 = 'plot,landas,data(x,y,3,*)'
+    p1 = 'plot,landas,data(x,y,0,*) ,/ynoz,yrange='+si
+    p2 = 'plot,landas,data(x,y,1,*),yrange='+yrange
+    p3 = 'plot,landas,data(x,y,2,*),yrange='+yrange
+    p4 = 'plot,landas,data(x,y,3,*),yrange='+yrange
     s=size(result)
     end
     'lxpy': begin
-      p1 = 'plot,landas,data(*,x,0,y) ,/ynoz'
-      p2 = 'plot,landas,data(*,x,1,y)'
-      p3 = 'plot,landas,data(*,x,2,y)'
-      p4 = 'plot,landas,data(*,x,3,y)'
+      p1 = 'plot,landas,data(*,x,0,y) ,/ynoz,yrange='+si
+      p2 = 'plot,landas,data(*,x,1,y),yrange='+yrange
+      p3 = 'plot,landas,data(*,x,2,y),yrange='+yrange
+      p4 = 'plot,landas,data(*,x,3,y),yrange='+yrange
       s=size(result)
       end
   else: print,'Fack'
@@ -84,20 +87,28 @@ while !mouse.button ne 4 do begin
         plots,/dev,[x,x]*zoom,[0,s(2)]*zoom
         plots,/dev,[0,s(1)]*zoom,[y,y]*zoom
         device,set_graphics=3
- 	    initi=reform(result(x,y,*))
+ 	initi=reform(result(x,y,*))
         milos, wl,landas,initi, pr,/synthesis,n_comp=n_comp,nlte=nlte
-  	    xlast=x
+  	xlast=x
         wset,1
         colores
         !p.multi=[0,2,2]
-    e=execute(p1)
+        e=execute(p1)
     	oplot,landas,pr(*,0),color=4
-    e=execute(p2)
+        e=execute(p2)
     	oplot,landas,pr(*,1),color=4
-    e=execute(p3)
+        plots,[landas[0],landas[ll-1]],[-0.003,-0.003],line=3
+        plots,[landas[0],landas[ll-1]],[0.003,0.003],line=3
+        
+        e=execute(p3)
     	oplot,landas,pr(*,2),color=4
-    e=execute(p4)
+        plots,[landas[0],landas[ll-1]],[-0.003,-0.003],line=3
+        plots,[landas[0],landas[ll-1]],[0.003,0.003],line=3
+        e=execute(p4)
     	oplot,landas,pr(*,3),color=4
+        plots,[landas[0],landas[ll-1]],[-0.003,-0.003],line=3
+        plots,[landas[0],landas[ll-1]],[0.003,0.003],line=3
+
         print,'x: ',text(x),' y: ',text(y)
         print,'B (B): ',text(result(x,y,1)),' Inc (G): ',text(result(x,y,5)),' Azi (A): ',text(result(x,y,6)),' Vdop (D): ',text(result(x,y,3))
         print, 'damp: (T)',text(result(x,y,4)),' eta0 (H): ',text(result(x,y,0)),' VLOS (V): ',text(result(x,y,2)),' CHISQR (I): ',text(ch(x,y))
