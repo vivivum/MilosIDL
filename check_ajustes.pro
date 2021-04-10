@@ -1,30 +1,31 @@
 pro check_ajustes,data,landas,result,ch,landa,order=order,$
-        n_comp=n_comp,nlte=nlte,zoom=zoom,color=color,yrange=yrange,si = si
+        n_comp=n_comp,nlte=nlte,zoom=zoom,color=color,yrange=yrange,si = si,filter=filter
 
 if not(keyword_set(yrange)) then yrange='[-0.1,0.1]'
-if not(keyword_set(si)) then yrangeI = '[1,0.6]'
+if not(keyword_set(si)) then yrangeI = '[0.2,1.2]'
 if not(keyword_set(n_comp)) then n_comp=1
+if not(keyword_set(filter)) then filter=0
 if not(keyword_set(order)) then order='xylp'
 if not(keyword_set(zoom)) then zoom=1
 if not(keyword_set(color)) then color=0
 ll = n_elements(landas)
 case order of
   'xylp': begin
-    p1 = 'plot,landas,data(x,y,*,0) ,/ynoz,yrange='+si
+    p1 = 'plot,landas,data(x,y,*,0) ,/ynoz,yrange='+yrangeI
     p2 = 'plot,landas,data(x,y,*,1),yrange='+yrange
     p3 = 'plot,landas,data(x,y,*,2),yrange='+yrange
     p4 = 'plot,landas,data(x,y,*,3),yrange='+yrange
     s=size(result)
     end
   'xypl': begin
-    p1 = 'plot,landas,data(x,y,0,*) ,/ynoz,yrange='+si
+    p1 = 'plot,landas,data(x,y,0,*) ,/ynoz,yrange='+yrangeI
     p2 = 'plot,landas,data(x,y,1,*),yrange='+yrange
     p3 = 'plot,landas,data(x,y,2,*),yrange='+yrange
     p4 = 'plot,landas,data(x,y,3,*),yrange='+yrange
     s=size(result)
     end
     'lxpy': begin
-      p1 = 'plot,landas,data(*,x,0,y) ,/ynoz,yrange='+si
+      p1 = 'plot,landas,data(*,x,0,y) ,/ynoz,yrange='+yrangeI
       p2 = 'plot,landas,data(*,x,1,y),yrange='+yrange
       p3 = 'plot,landas,data(*,x,2,y),yrange='+yrange
       p4 = 'plot,landas,data(*,x,3,y),yrange='+yrange
@@ -50,7 +51,7 @@ CROSSM,x,y,[s(1),s(2),0,1,1],BUT=ib,xy_window=1
 if ib eq 1 then begin
     ;genera fit
     initi=reform(result(x,y,*))
-    milos, wl,landas,initi, pr,/synthesis,n_comp=n_comp
+    milos, wl,landas,initi, pr,/synthesis,n_comp=n_comp,filter=filter
     xlast=x
     wset,1
     !p.multi=[0,2,2]
@@ -88,7 +89,7 @@ while !mouse.button ne 4 do begin
         plots,/dev,[0,s(1)]*zoom,[y,y]*zoom
         device,set_graphics=3
  	initi=reform(result(x,y,*))
-        milos, wl,landas,initi, pr,/synthesis,n_comp=n_comp,nlte=nlte
+        milos, wl,landas,initi, pr,/synthesis,n_comp=n_comp,nlte=nlte,filter=filter
   	xlast=x
         wset,1
         colores

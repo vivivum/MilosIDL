@@ -396,13 +396,13 @@ endif else if keyword_set(inversion) then begin
   	index = indgen(n_comp)*npar
 	PLIMITS = replicate( {set:0, limits:[0d0,0d0]} , npar* n_comp) ;define variable plimits
 	PLIMITS[*].SET = 1  ; Activate all limits
-	PLIMITS[index].LIMITS = [1d0,2500d0]  ; Eta0
+	PLIMITS[index].LIMITS = [1d0,5000d0]  ; Eta0
 	PLIMITS[index+1].LIMITS = [0d0,4500d0]  ; Magnetic field
 	PLIMITS[index+2].LIMITS = [-100d0,100d0]  ; Velocity (km/s)
 	PLIMITS[index+3].LIMITS = [1d-4,15d-1]  ; Doppler width
 	PLIMITS[index+4].LIMITS = [1d-4,1d1]  ; Damping
-	PLIMITS[index+5].LIMITS = [0d0,180d0]  ; Inclination
-	PLIMITS[index+6].LIMITS = [0d0,180d0]  ; Azimuth
+	PLIMITS[index+5].LIMITS = [-180d0,180d0]  ; Inclination
+	PLIMITS[index+6].LIMITS = [-180d0,180d0]  ; Azimuth
 	PLIMITS[index+7].LIMITS = [1d-4,1d1]  ; S0
 	PLIMITS[index+8].LIMITS = [1d-4,1d1]  ; S1
 	PLIMITS[index+9].LIMITS = [0d0,4d0]  ; Macroturbulence
@@ -441,9 +441,9 @@ endif else if keyword_set(inversion) then begin
     VLIMITS[index+1].SET = 1
     VLIMITS[index+1].LIMITS = [-800d0,800d0]
     VLIMITS[index+5].SET = 1
-    VLIMITS[index+5].LIMITS = [-30d0,30d0]
+    VLIMITS[index+5].LIMITS = [-45d0,45d0]
     VLIMITS[index+6].SET = 1
-    VLIMITS[index+6].LIMITS = [-30d0,30d0]
+    VLIMITS[index+6].LIMITS = [-45d0,45d0]
     VLIMITS[index+9].SET = 1
     VLIMITS[index+9].LIMITS = [-1d0,1d0] ;MACRO
 	IF NPAR eq 15 then begin

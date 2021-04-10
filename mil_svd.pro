@@ -36,7 +36,7 @@
 PRO MIL_SVD,H,BETA,DELTA,W,use_svd_cordic = use_svd_cordic
 
   R=(SIZE(H))(1)
-  EPSILON=1e-12  ;threshold to reject small eigenvalues (very small, this is usefull in other situations)
+  EPSILON=1d-12 ;threshold to reject small eigenvalues (very small, this is usefull in other situations)
   TOP=1
   cual=where(finite(h) eq 0,hay)
   if hay gt 0 then h(cual)=0.

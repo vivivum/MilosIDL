@@ -65,7 +65,7 @@ oplot,tau,Sl,line=2,color=3
 
 stop
 
-testp = 10000
+testp = 10
 b=randomu(seed,testp)*1500.
 g=randomu(seed,testp)*180.
 a=randomu(seed,testp)*180.
@@ -103,7 +103,7 @@ for i=0,testp-1 do begin
 
     milos, Wl, eje, init_syn, y,/synthesis,/nlte
 
-	y = y + randomn(Points,4,100)*1.e-3
+	  y = y + randomn(Points,4,100)*1.e-4
 
     INIT_MODEL=init_syn
 
