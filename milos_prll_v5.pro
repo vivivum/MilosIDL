@@ -453,15 +453,15 @@ save,filename=sav_file+'.save',Block_data,final_model,errors,final_chisqr ;sin m
 save,filename=sav_file+'_perfiles.save',final_fit,axis,wt
 endelse
 
-if not(keyword_set(sav_file)) then begin
-message,/info, " saving results in results.save"
-save,filename='results.save',Block_data,final_model,errors,final_chisqr ;sin macro a fijo, New CI, constraits
-save,filename='results_perfiles.save',final_fit,axis,wt
-    endif else begin
-message,/info, " saving results in "+sav_file
-save,filename=sav_file+'.save',Block_data,final_model,errors,final_chisqr ;sin macro a fijo, New CI, constraits
-save,filename=sav_file+'_perfiles.save',final_fit,axis,wt
-endelse
+; if not(keyword_set(sav_file)) then begin
+; message,/info, " saving results in results.save"
+; save,filename='results.save',Block_data,final_model,errors,final_chisqr ;sin macro a fijo, New CI, constraits
+; save,filename='results_perfiles.save',final_fit,axis,wt
+;     endif else begin
+; message,/info, " saving results in "+sav_file
+; save,filename=sav_file+'.save',Block_data,final_model,errors,final_chisqr ;sin macro a fijo, New CI, constraits
+; save,filename=sav_file+'_perfiles.save',final_fit,axis,wt
+; endelse
 
 for ipar=0L,nbparallel-1 do begin
     stat = (*bridges[ipar])->status()
@@ -522,6 +522,8 @@ ENDIF ELSE BEGIN
             iprof_x = iprof mod nblock_x
             iprof_y = iprof/nblock_x
 
+endwhile
+
 if not(keyword_set(sav_file)) then begin
 message,/info, " saving results in results.save"
 save,filename='results.save',Block_data,final_model,errors,final_chisqr,axis,wt ;sin macro a fijo, New CI, constraits
@@ -532,7 +534,6 @@ save,filename=sav_file+'.save',Block_data,final_model,errors,final_chisqr,axis,w
 ;save,filename=sav_file+'_perfiles.save',final_fit,axis,wt
 endelse
 
-endwhile
 
 
 ENDELSE
