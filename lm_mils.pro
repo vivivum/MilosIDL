@@ -163,6 +163,7 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
     if not(keyword_set(ilambda)) then ilambda=10D0;0.1d0 ; Assumes close to global minimum
     if not(keyword_set(toplim)) then toplim=1D-12 ; Very low, It may stop by MITER
     if not(keyword_set(C_LIMIT)) then C_LIMIT=1D-12 ; Very low, It may stop by MITER
+    if not(keyword_set(llimit)) then llimit=[1e-32,1e+32]; Very low, It may stop by MITER
     ; if not(keyword_set(slight)) then print,'No stray light';slight=0 ; No stray light
     ; if not(keyword_set(filter)) then print,'No inst. filter profile'
     if not(prt) then print,'triplet='+string(keyword_set(triplet))
@@ -281,8 +282,9 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
         IF CHISQR-OCHISQR lt 0. then begin ;;FIT GOT BETTER
         ;****CONVERGENCE CONDITION *****
 
-            if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) OR (CHISQR lt C_LIMIT) $
-              THEN CLANDA = 1 ;Stoping criteria
+            if (ABS((OCHISQR-CHISQR)*100./CHISQR) LT TOPLIM) THEN CLANDA = 1
+            if (CHISQR lt C_LIMIT) THEN CLANDA = 1
+               ;Stoping criteria
 
             ;FIT GOT BETTER SO DECREASE FLAMBDA BY FACTOR OF 10
             flambda=0.1*flambda
@@ -314,6 +316,9 @@ pro LM_MILS, WLI, AXIS, STOKESPROF, p_i, yfit, err, chisqf,iter,slight=slight,to
             COVARM,W,SIG,YFIT,STOKESPROF,PDER,NTERMS,NFREE,BETA,ALPHA,OCHISQR,drho=dhro
 
         ENDIF ELSE BEGIN ;ASSUMES FIT GOT WORSE
+
+            if (flambda GT llimit[1]) THEN CLANDA = 1
+            if (flambda LT llimit[0]) THEN CLANDA = 1
 
             ;store parameters for studing the evolution of them (opt mode)
             iter_info.Params_stored[*,ITER] = P_I

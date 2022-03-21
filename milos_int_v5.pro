@@ -44,8 +44,8 @@ if simple eq 1 then begin
             	
             milos,wl, axis, init_model, reform(yy(x,y,*,*)),chisqr=chisqrt,yfit=yfit,$
               sigma=sigma,fix=fix,/inversion,ilambda=ilambda,miter=miter,Err=Err,filter=filter,$
-              weight=weight,VARLIMITS = [[7, 1, -0.1, 0.1],[8, 1, -0.1, 0.1],[3, 1, -0.005, 0.005]],$
-              PARLIMITS = [0, 1, 1d0, 150d0],/quiet,doplot=doplot,slight=stray,mlocal=mlocal
+              weight=weight;,VARLIMITS = [[7, 1, -0.1, 0.1],[8, 1, -0.1, 0.1],[3, 1, -0.005, 0.005]],$
+            ;   PARLIMITS = [0, 1, 1d0, 150d0],/quiet,doplot=doplot,slight=stray,mlocal=mlocal
             ;print,x,y
             fmodel (x ,y,*)= init_model
             error (x ,y,*)= err
@@ -79,8 +79,8 @@ endif else begin
                 init_model = imodel1(*,im)
                 milos,wl, axis, init_model, reform(yy(x,y,*,*)),chisqr=chisqrt,yfit=yfit,/quiet,$
                   sigma=sigma,fix=fix,/inversion,ilambda=ilambda,miter=miter,Err=Err,filter=filter,$
-                  weight=weight,VARLIMITS = [[7, 1, -0.1, 0.1],[8, 1, -0.1, 0.1],[3, 1, -0.005, 0.005],[0, 1, -10d0, 10d0]],$
-                  PARLIMITS = [[0, 1, 1d0, 250d0] , [3, 1, 0.01d0, 0.06d0], [4, 1, 0.01d0, 5d0]],doplot=doplot,toplim=toplim,slight=stray,mlocal=mlocal
+                  weight=weight;,VARLIMITS = [[7, 1, -0.1, 0.1],[8, 1, -0.1, 0.1],[3, 1, -0.005, 0.005],[0, 1, -10d0, 10d0]],$
+                  ;PARLIMITS = [[0, 1, 1d0, 250d0] , [3, 1, 0.01d0, 0.06d0], [4, 1, 0.01d0, 5d0]],doplot=doplot,toplim=toplim,slight=stray,mlocal=mlocal
                 ;print,chisqr(x,y),chisqrt
                 if (im eq 0) OR (chisqrt lt chisqr(x,y)) then begin
                     fmodel (x ,y,*)= init_model
@@ -113,8 +113,8 @@ if badpixel eq 1 then begin
             init_model = reform(init_block(x,y,*))
             milos,wl, axis, init_model, reform(yy(x,y,*,*)),chisqr=chisqrt,yfit=yfit,/quiet,$
               sigma=sigma,fix=fix,/inversion,ilambda=ilambda*10.,miter=miter+30.,Err=Err,filter=filter,$
-              weight=weight,VARLIMITS = [[7, 1, -0.05, 0.05],[8, 1, -0.05, 0.05],[3, 1, -0.005, 0.005],[0, 1, -10d0, 10d0]],$
-              PARLIMITS = [[0, 1, 1d0, 250d0], [3, 1, 0.01d0, 0.06d0], [4, 1, 0.01d0, 5d0]],doplot=doplot,slight=stray,mlocal=mlocal
+              weight=weight;,VARLIMITS = [[7, 1, -0.05, 0.05],[8, 1, -0.05, 0.05],[3, 1, -0.005, 0.005],[0, 1, -10d0, 10d0]],$
+              ;PARLIMITS = [[0, 1, 1d0, 250d0], [3, 1, 0.01d0, 0.06d0], [4, 1, 0.01d0, 5d0]],doplot=doplot,slight=stray,mlocal=mlocal
             ;print,chisqr(x,y),chisqrt
             if chisqrt lt chisqr(x,y) then begin
                 fmodel (x ,y,*)= init_model

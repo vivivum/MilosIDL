@@ -1,7 +1,5 @@
 function badconversionfitfix,data,level
 
-on_error,2
-
 nl = level lt 1 ? level : 0.2
 
 ;ss=size(gram.b_long)
